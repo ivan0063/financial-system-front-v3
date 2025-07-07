@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import type { DebtAccount } from "@/domain/entities/debt-account"
 import { Trash2, Eye } from "lucide-react"
+import { debtRepository } from "@/infrastructure/repositories/api-debt-repository"
 
 interface DebtAccountListProps {
   debtAccounts: DebtAccount[]
@@ -16,6 +17,7 @@ interface DebtAccountListProps {
 export function DebtAccountList({ debtAccounts, onAccountDeleted }: DebtAccountListProps) {
   const [loadingStatus, setLoadingStatus] = useState<Record<string, boolean>>({})
   const [accountStatuses, setAccountStatuses] = useState<Record<string, string>>({})
+  const [loadingPayOff, setLoadingPayOff] = useState<Record<string, boolean>>({})
 
   const handleDelete = async (code: string) => {
     if (!confirm("Are you sure you want to delete this debt account?")) {
@@ -39,6 +41,25 @@ export function DebtAccountList({ debtAccounts, onAccountDeleted }: DebtAccountL
       console.error("Error getting account status:", error)
     } finally {
       setLoadingStatus({ ...loadingStatus, [code]: false })
+    }
+  }
+
+  const handlePayOff = async (code: string) => {
+    if (!confirm("Are you sure you want to pay off all debts for this account? This action cannot be undone.")) {
+      return
+    }
+
+    setLoadingPayOff({ ...loadingPayOff, [code]: true })
+    try {
+      const result = await debtRepository.payOffDebts(code)
+      console.log("Pay off result:", result)
+      alert(`Successfully paid off debts: ${result}`)
+      onAccountDeleted() // Refresh the data
+    } catch (error) {
+      console.error("Error paying off debts:", error)
+      alert(`Failed to pay off debts: ${error instanceof Error ? error.message : "Unknown error"}`)
+    } finally {
+      setLoadingPayOff({ ...loadingPayOff, [code]: false })
     }
   }
 
@@ -93,6 +114,14 @@ export function DebtAccountList({ debtAccounts, onAccountDeleted }: DebtAccountL
                 >
                   <Eye className="h-4 w-4 mr-1" />
                   {loadingStatus[account.code] ? "Loading..." : "Status"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() => handlePayOff(account.code)}
+                  disabled={loadingPayOff[account.code]}
+                >
+                  {loadingPayOff[account.code] ? "Paying..." : "Pay Off"}
                 </Button>
                 <Button size="sm" variant="destructive" onClick={() => handleDelete(account.code)}>
                   <Trash2 className="h-4 w-4 mr-1" />
