@@ -11,18 +11,19 @@ import type { FixedExpense } from "@/domain/entities/fixed-expense"
 import { Plus } from "lucide-react"
 
 export function FixedExpensesView() {
-  const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([])
+  const [expenses, setExpenses] = useState<FixedExpense[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<FixedExpense | null>(null)
 
   useEffect(() => {
-    loadFixedExpenses()
+    loadExpenses()
   }, [])
 
-  const loadFixedExpenses = async () => {
+  const loadExpenses = async () => {
     try {
-      const expenses = await fixedExpenseRepository.findAll()
-      setFixedExpenses(expenses)
+      const data = await fixedExpenseRepository.findAll()
+      setExpenses(data)
     } catch (error) {
       console.error("Error loading fixed expenses:", error)
     } finally {
@@ -32,11 +33,22 @@ export function FixedExpensesView() {
 
   const handleExpenseCreated = () => {
     setShowForm(false)
-    loadFixedExpenses()
+    setEditingExpense(null)
+    loadExpenses()
   }
 
   const handleExpenseDeleted = () => {
-    loadFixedExpenses()
+    loadExpenses()
+  }
+
+  const handleEditExpense = (expense: FixedExpense) => {
+    setEditingExpense(expense)
+    setShowForm(true)
+  }
+
+  const handleCloseForm = () => {
+    setShowForm(false)
+    setEditingExpense(null)
   }
 
   if (loading) {
@@ -51,8 +63,6 @@ export function FixedExpensesView() {
       </div>
     )
   }
-
-  const totalMonthlyExpenses = fixedExpenses.reduce((sum, expense) => sum + expense.monthlyCost, 0)
 
   return (
     <div className="min-h-screen bg-background">
@@ -69,34 +79,25 @@ export function FixedExpensesView() {
           </Button>
         </div>
 
-        <div className="mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Summary</CardTitle>
-              <CardDescription>Total fixed expenses per month</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">${totalMonthlyExpenses.toFixed(2)}</div>
-              <p className="text-sm text-muted-foreground">
-                {fixedExpenses.length} expense{fixedExpenses.length !== 1 ? "s" : ""}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
         {showForm && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Create New Fixed Expense</CardTitle>
-              <CardDescription>Add a new recurring monthly expense</CardDescription>
+              <CardTitle>{editingExpense ? "Edit" : "Create New"} Fixed Expense</CardTitle>
+              <CardDescription>
+                {editingExpense ? "Update the expense information" : "Add a new recurring expense to track"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <FixedExpenseForm onSuccess={handleExpenseCreated} onCancel={() => setShowForm(false)} />
+              <FixedExpenseForm expense={editingExpense} onClose={handleExpenseCreated} />
             </CardContent>
           </Card>
         )}
 
-        <FixedExpenseList fixedExpenses={fixedExpenses} onExpenseDeleted={handleExpenseDeleted} />
+        <FixedExpenseList
+          expenses={expenses}
+          onExpenseDeleted={handleExpenseDeleted}
+          onExpenseEdit={handleEditExpense}
+        />
       </div>
     </div>
   )

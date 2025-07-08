@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { debtRepository } from "@/infrastructure/repositories/api-debt-repository"
 import type { Debt } from "@/domain/entities/debt"
 import type { DebtAccount } from "@/domain/entities/debt-account"
@@ -17,17 +18,22 @@ interface DebtListProps {
 
 export function DebtList({ debts, debtAccounts, onDebtDeleted }: DebtListProps) {
   const [loadingPayOff, setLoadingPayOff] = useState<Record<string, boolean>>({})
+  const [deletingDebt, setDeletingDebt] = useState<number | null>(null)
 
   const handleDelete = async (id: number) => {
     if (!confirm("Are you sure you want to delete this debt?")) {
       return
     }
 
+    setDeletingDebt(id)
     try {
       await debtRepository.delete(id)
       onDebtDeleted()
     } catch (error) {
       console.error("Error deleting debt:", error)
+      alert("Failed to delete debt. Please try again.")
+    } finally {
+      setDeletingDebt(null)
     }
   }
 
@@ -53,22 +59,52 @@ export function DebtList({ debts, debtAccounts, onDebtDeleted }: DebtListProps) 
     }
   }
 
-  const getDebtAccountName = (code: string) => {
-    const account = debtAccounts.find((acc) => acc.code === code)
-    return account ? account.name : code
+  const getDebtAccountInfo = (debt: Debt) => {
+    // Try to get account info from the debt's debtAccount property
+    if (debt.debtAccount?.code) {
+      const account = debtAccounts.find((acc) => acc.code === debt.debtAccount?.code)
+      return {
+        code: debt.debtAccount.code,
+        name: account?.name || debt.debtAccount.code,
+        uri: debt.debtAccount.uri || `/jpa/debtAccount/${debt.debtAccount.code}`,
+      }
+    }
+
+    // Fallback: try to extract from URI if available
+    if (debt.debtAccount?.uri) {
+      const codeMatch = debt.debtAccount.uri.match(/\/debtAccount\/(.+)$/)
+      const code = codeMatch ? codeMatch[1] : "unknown"
+      const account = debtAccounts.find((acc) => acc.code === code)
+      return {
+        code,
+        name: account?.name || code,
+        uri: debt.debtAccount.uri,
+      }
+    }
+
+    // Last resort
+    return {
+      code: "unknown",
+      name: "Unknown Account",
+      uri: "N/A",
+    }
   }
 
   // Group debts by account
   const debtsByAccount = debts.reduce(
     (acc, debt) => {
-      const accountCode = debt.debtAccount?.code || "unknown"
+      const accountInfo = getDebtAccountInfo(debt)
+      const accountCode = accountInfo.code
       if (!acc[accountCode]) {
-        acc[accountCode] = []
+        acc[accountCode] = {
+          debts: [],
+          accountInfo,
+        }
       }
-      acc[accountCode].push(debt)
+      acc[accountCode].debts.push(debt)
       return acc
     },
-    {} as Record<string, Debt[]>,
+    {} as Record<string, { debts: Debt[]; accountInfo: { code: string; name: string; uri: string } }>,
   )
 
   if (debts.length === 0) {
@@ -83,61 +119,85 @@ export function DebtList({ debts, debtAccounts, onDebtDeleted }: DebtListProps) 
 
   return (
     <div className="space-y-6">
-      {Object.entries(debtsByAccount).map(([accountCode, accountDebts]) => (
+      {Object.entries(debtsByAccount).map(([accountCode, { debts: accountDebts, accountInfo }]) => (
         <Card key={accountCode}>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center">
-                  <CreditCard className="h-5 w-5 mr-2" />
-                  {getDebtAccountName(accountCode)}
-                </CardTitle>
-                <CardDescription>
-                  {accountDebts.length} debt{accountDebts.length !== 1 ? "s" : ""} • Total: $
-                  {accountDebts.reduce((sum, debt) => sum + debt.originalAmount, 0).toFixed(2)}
-                </CardDescription>
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <CreditCard className="h-5 w-5 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">{accountInfo.name}</h3>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>
+                      Account Code: <span className="font-mono">{accountInfo.code}</span>
+                    </p>
+                    <p>
+                      URI: <span className="font-mono text-xs">{accountInfo.uri}</span>
+                    </p>
+                  </div>
+                </div>
               </div>
-              <Button variant="outline" onClick={() => handlePayOff(accountCode)} disabled={loadingPayOff[accountCode]}>
-                {loadingPayOff[accountCode] ? "Processing..." : "Pay Off All"}
-              </Button>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <p className="text-sm text-muted-foreground">
+                    {accountDebts.length} debt{accountDebts.length !== 1 ? "s" : ""}
+                  </p>
+                  <p className="text-lg font-semibold">
+                    ${accountDebts.reduce((sum, debt) => sum + debt.originalAmount, 0).toFixed(2)}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => handlePayOff(accountCode)}
+                  disabled={loadingPayOff[accountCode] || accountCode === "unknown"}
+                >
+                  {loadingPayOff[accountCode] ? "Processing..." : "Pay Off All"}
+                </Button>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {accountDebts.map((debt) => (
-                <Card key={debt.id} className="border-l-4 border-l-primary">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base">{debt.description}</CardTitle>
-                    <CardDescription>{debt.operationDate}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Amount:</span>
-                      <span className="font-medium">${debt.originalAmount.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Monthly Payment:</span>
-                      <span className="font-medium">${debt.monthlyPayment.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Installments:</span>
-                      <span className="font-medium">
-                        {debt.currentInstallment}/{debt.maxFinancingTerm}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
+
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Monthly Payment</TableHead>
+                  <TableHead className="text-center">Installments</TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {accountDebts.map((debt) => (
+                  <TableRow key={debt.id}>
+                    <TableCell className="font-medium">{debt.description}</TableCell>
+                    <TableCell>{debt.operationDate}</TableCell>
+                    <TableCell className="text-right font-medium">${debt.originalAmount.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">${debt.monthlyPayment.toFixed(2)}</TableCell>
+                    <TableCell className="text-center">
+                      {debt.currentInstallment}/{debt.maxFinancingTerm}
+                    </TableCell>
+                    <TableCell className="text-center">
                       <Badge variant={debt.active ? "default" : "secondary"}>
                         {debt.active ? "Active" : "Inactive"}
                       </Badge>
-                      <Button size="sm" variant="destructive" onClick={() => handleDelete(debt.id)}>
-                        <Trash2 className="h-4 w-4" />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(debt.id)}
+                        disabled={deletingDebt === debt.id}
+                      >
+                        {deletingDebt === debt.id ? "Deleting..." : <Trash2 className="h-4 w-4" />}
                       </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </Card>
       ))}
     </div>

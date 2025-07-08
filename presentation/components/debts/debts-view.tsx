@@ -6,19 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "../layout/header"
 import { DebtForm } from "./debt-form"
 import { DebtList } from "./debt-list"
-import { StatementUpload } from "./statement-upload"
 import { debtRepository } from "@/infrastructure/repositories/api-debt-repository"
 import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import type { Debt } from "@/domain/entities/debt"
 import type { DebtAccount } from "@/domain/entities/debt-account"
-import { Plus, Upload } from "lucide-react"
+import { Plus } from "lucide-react"
 
 export function DebtsView() {
   const [debts, setDebts] = useState<Debt[]>([])
   const [debtAccounts, setDebtAccounts] = useState<DebtAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [showUpload, setShowUpload] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -45,11 +43,6 @@ export function DebtsView() {
     loadData()
   }
 
-  const handleDebtsExtracted = () => {
-    setShowUpload(false)
-    loadData()
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -73,10 +66,6 @@ export function DebtsView() {
             <p className="text-muted-foreground">Manage individual debt items and payments</p>
           </div>
           <div className="flex space-x-2">
-            <Button onClick={() => setShowUpload(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Statement
-            </Button>
             <Button onClick={() => setShowForm(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Add Debt
@@ -92,22 +81,6 @@ export function DebtsView() {
             </CardHeader>
             <CardContent>
               <DebtForm debtAccounts={debtAccounts} onSuccess={handleDebtCreated} onCancel={() => setShowForm(false)} />
-            </CardContent>
-          </Card>
-        )}
-
-        {showUpload && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Upload Account Statement</CardTitle>
-              <CardDescription>Extract debts automatically from your account statement</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <StatementUpload
-                debtAccounts={debtAccounts}
-                onSuccess={handleDebtsExtracted}
-                onCancel={() => setShowUpload(false)}
-              />
             </CardContent>
           </Card>
         )}

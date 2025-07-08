@@ -6,17 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "../layout/header"
 import { DebtAccountForm } from "./debt-account-form"
 import { DebtAccountList } from "./debt-account-list"
+import { StatementUpload } from "../debts/statement-upload"
 import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import type { DebtAccount } from "@/domain/entities/debt-account"
-import { Plus } from "lucide-react"
+import { Plus, Upload } from "lucide-react"
 
 export function DebtAccountsView() {
   const [debtAccounts, setDebtAccounts] = useState<DebtAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-
-  // Remove: const debtAccountRepository = new ApiDebtAccountRepository()
-  // It's now imported as an instance
+  const [showUpload, setShowUpload] = useState(false)
 
   useEffect(() => {
     loadDebtAccounts()
@@ -24,8 +23,8 @@ export function DebtAccountsView() {
 
   const loadDebtAccounts = async () => {
     try {
-      const accounts = await debtAccountRepository.findAll()
-      setDebtAccounts(accounts)
+      const data = await debtAccountRepository.findAll()
+      setDebtAccounts(data)
     } catch (error) {
       console.error("Error loading debt accounts:", error)
     } finally {
@@ -38,7 +37,9 @@ export function DebtAccountsView() {
     loadDebtAccounts()
   }
 
-  const handleAccountDeleted = () => {
+  const handleDebtsExtracted = () => {
+    setShowUpload(false)
+    // Optionally refresh accounts if needed
     loadDebtAccounts()
   }
 
@@ -62,19 +63,25 @@ export function DebtAccountsView() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Debt Accounts</h2>
-            <p className="text-muted-foreground">Manage your credit cards and debt accounts</p>
+            <p className="text-muted-foreground">Manage your debt accounts and upload statements</p>
           </div>
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Account
-          </Button>
+          <div className="flex space-x-2">
+            <Button onClick={() => setShowUpload(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Statement
+            </Button>
+            <Button onClick={() => setShowForm(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Account
+            </Button>
+          </div>
         </div>
 
         {showForm && (
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Create New Debt Account</CardTitle>
-              <CardDescription>Add a new credit card or debt account to track</CardDescription>
+              <CardDescription>Add a new debt account to track</CardDescription>
             </CardHeader>
             <CardContent>
               <DebtAccountForm onSuccess={handleAccountCreated} onCancel={() => setShowForm(false)} />
@@ -82,7 +89,23 @@ export function DebtAccountsView() {
           </Card>
         )}
 
-        <DebtAccountList debtAccounts={debtAccounts} onAccountDeleted={handleAccountDeleted} />
+        {showUpload && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Upload Account Statement</CardTitle>
+              <CardDescription>Extract debts automatically from your account statement</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <StatementUpload
+                debtAccounts={debtAccounts}
+                onSuccess={handleDebtsExtracted}
+                onCancel={() => setShowUpload(false)}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        <DebtAccountList />
       </div>
     </div>
   )
