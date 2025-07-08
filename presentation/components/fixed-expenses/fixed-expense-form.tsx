@@ -20,11 +20,13 @@ interface FixedExpenseFormProps {
   onClose: () => void
 }
 
+const DEFAULT_USER_EMAIL = "jimm0063@gmail.com"
+
 export function FixedExpenseForm({ expense, onClose }: FixedExpenseFormProps) {
   const [name, setName] = useState("")
-  const [monthlyCost, setMonthlyCost] = useState(0)
+  const [monthlyCost, setMonthlyCost] = useState("")
   const [paymentDay, setPaymentDay] = useState(1)
-  const [catalogId, setCatalogId] = useState("")
+  const [catalogCode, setCatalogCode] = useState("")
   const [catalogs, setCatalogs] = useState<FixedExpenseCatalog[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [loadingCatalogs, setLoadingCatalogs] = useState(true)
@@ -35,14 +37,14 @@ export function FixedExpenseForm({ expense, onClose }: FixedExpenseFormProps) {
     loadCatalogs()
     if (expense) {
       setName(expense.name)
-      setMonthlyCost(expense.monthlyCost)
+      setMonthlyCost(expense.monthlyCost.toString())
       setPaymentDay(expense.paymentDay)
-      setCatalogId(expense.fixedExpenseCatalog?.id?.toString() || "")
+      setCatalogCode(expense.fixedExpenseCatalog?.code || "")
     } else {
       setName("")
-      setMonthlyCost(0)
+      setMonthlyCost("")
       setPaymentDay(1)
-      setCatalogId("")
+      setCatalogCode("")
     }
   }, [expense])
 
@@ -50,7 +52,7 @@ export function FixedExpenseForm({ expense, onClose }: FixedExpenseFormProps) {
     try {
       setLoadingCatalogs(true)
       const catalogData = await fixedExpenseCatalogRepository.findAll()
-      setCatalogs(catalogData)
+      setCatalogs(catalogData.filter((catalog) => catalog.active))
       setError(null)
     } catch (error) {
       console.error("Error loading catalogs:", error)
@@ -68,8 +70,14 @@ export function FixedExpenseForm({ expense, onClose }: FixedExpenseFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!catalogId) {
+    if (!catalogCode) {
       setError("Please select a category.")
+      return
+    }
+
+    const monthlyAmount = Number.parseFloat(monthlyCost)
+    if (isNaN(monthlyAmount) || monthlyAmount <= 0) {
+      setError("Please enter a valid monthly cost.")
       return
     }
 
@@ -78,18 +86,16 @@ export function FixedExpenseForm({ expense, onClose }: FixedExpenseFormProps) {
 
     try {
       const expenseData = {
-        name,
-        monthlyCost,
+        name: name.trim(),
+        monthlyCost: monthlyAmount,
         paymentDay,
         active: true,
-        fixedExpenseCatalog: catalogId, // This will be converted to URI format in the repository
+        debtSysUser: `/jpa/user/${DEFAULT_USER_EMAIL}`,
+        fixedExpenseCatalog: `/jpa/fixedExpenseCatalog/${catalogCode}`,
       }
 
       if (expense) {
-        await fixedExpenseRepository.update({
-          id: expense.id,
-          ...expenseData,
-        })
+        await fixedExpenseRepository.update(expense.id, expenseData)
         toast({
           title: "Success",
           description: "Fixed expense updated successfully",
@@ -151,8 +157,8 @@ export function FixedExpenseForm({ expense, onClose }: FixedExpenseFormProps) {
               step="0.01"
               min="0"
               value={monthlyCost}
-              onChange={(e) => setMonthlyCost(Number.parseFloat(e.target.value) || 0)}
-              placeholder="Enter monthly cost"
+              onChange={(e) => setMonthlyCost(e.target.value)}
+              placeholder="Enter monthly cost (e.g., 123.45)"
               required
               disabled={isLoading}
             />
@@ -186,16 +192,16 @@ export function FixedExpenseForm({ expense, onClose }: FixedExpenseFormProps) {
                 <AlertDescription>No expense categories found. Please create a category first.</AlertDescription>
               </Alert>
             ) : (
-              <Select value={catalogId} onValueChange={setCatalogId} required disabled={isLoading}>
+              <Select value={catalogCode} onValueChange={setCatalogCode} required disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
                   {catalogs.map((catalog) => (
-                    <SelectItem key={catalog.id} value={catalog.id.toString()}>
+                    <SelectItem key={catalog.code} value={catalog.code}>
                       <div className="flex flex-col">
                         <span className="font-medium">{catalog.name}</span>
-                        <span className="text-xs text-muted-foreground">ID: {catalog.id}</span>
+                        <span className="text-xs text-muted-foreground">Code: {catalog.code}</span>
                       </div>
                     </SelectItem>
                   ))}

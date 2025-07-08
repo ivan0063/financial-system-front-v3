@@ -1,0 +1,48 @@
+- On fixed expense catalog when I create a new one It won't refresh the component can you fit it?
+
+- On Fixed Expense view the field Monthly Cost should able to set a double number
+
+- On fixed expense creation it fails I see that its creating the following request 
+
+{
+    "name": "test222",
+    "monthlyCost": 544,
+    "paymentDay": 14,
+    "active": true,
+    "debtSysUser": null,
+    "fixedExpenseCatalog": "/jpa/fixedExpenseCatalog/undefined"
+}
+
+And it should be:
+
+{
+    "name": "test222",
+    "monthlyCost": 544,
+    "paymentDay": 14,
+    "active": true,
+    "debtSysUser": /jpa/user/jimm0063@gmail.com,
+    "fixedExpenseCatalog": "/jpa/fixedExpenseCatalog/test2"
+}
+
+Where 
+
+jimm0063@gmail.com = default email in the project
+test2 = code selected Category * form
+
+- On financial provider view its throwing this error:
+
+Error: undefined is not an object (evaluating 'provider.financialProviderCatalog.name')
+
+And it won't render 
+
+-On debt account view form the field Statement Type display values that are not valid
+-On debt account view form to create a new one the credit limit should be able to store double values 
+- On debt view when I click on add debt it shows this error
+
+Error: undefined is not an object (evaluating 'debtAccounts.map')
+DebtForm@
+DebtsView@
+
+
+
+

@@ -18,6 +18,7 @@ import type { FixedExpenseCatalog } from "@/domain/entities/fixed-expense-catalo
 export function FixedExpenseCatalogsView() {
   const [selectedCatalog, setSelectedCatalog] = useState<FixedExpenseCatalog | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   const handleEdit = (catalog: FixedExpenseCatalog) => {
     setSelectedCatalog(catalog)
@@ -32,6 +33,11 @@ export function FixedExpenseCatalogsView() {
   const handleFormClose = () => {
     setIsFormOpen(false)
     setSelectedCatalog(null)
+  }
+
+  const handleFormSuccess = () => {
+    // Trigger refresh of the list component
+    setRefreshTrigger((prev) => prev + 1)
   }
 
   return (
@@ -59,10 +65,16 @@ export function FixedExpenseCatalogsView() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <div className="col-span-4">
-            <FixedExpenseCatalogList onEdit={handleEdit} onCreate={handleCreate} />
+            <FixedExpenseCatalogList onEdit={handleEdit} onCreate={handleCreate} refreshTrigger={refreshTrigger} />
           </div>
           <div className="col-span-3">
-            {isFormOpen && <FixedExpenseCatalogForm catalog={selectedCatalog} onClose={handleFormClose} />}
+            {isFormOpen && (
+              <FixedExpenseCatalogForm
+                catalog={selectedCatalog}
+                onClose={handleFormClose}
+                onSuccess={handleFormSuccess}
+              />
+            )}
           </div>
         </div>
       </div>

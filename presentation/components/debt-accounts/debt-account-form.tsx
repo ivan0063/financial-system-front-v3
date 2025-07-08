@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,7 +25,7 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
     code: "",
     name: "",
     payDay: 1,
-    credit: 0,
+    credit: "",
     accountStatementType: "UNIVERSAL" as "UNIVERSAL" | "BANCOLOMBIA" | "DAVIVIENDA",
     financialProviderId: "",
     active: true,
@@ -46,7 +45,7 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
         code: account.code,
         name: account.name,
         payDay: account.payDay,
-        credit: account.credit,
+        credit: account.credit.toString(),
         accountStatementType: account.accountStatementType,
         financialProviderId: account.financialProvider?.code || "",
         active: account.active,
@@ -72,6 +71,17 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const creditAmount = Number.parseFloat(formData.credit)
+    if (isNaN(creditAmount) || creditAmount < 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid credit limit",
+        variant: "destructive",
+      })
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -79,7 +89,7 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
         code: formData.code,
         name: formData.name,
         payDay: formData.payDay,
-        credit: formData.credit,
+        credit: creditAmount,
         accountStatementType: formData.accountStatementType,
         financialProvider: `/jpa/financialProvider/${formData.financialProviderId}`,
         active: formData.active,
@@ -180,8 +190,8 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
             min="0"
             step="0.01"
             value={formData.credit}
-            onChange={(e) => handleInputChange("credit", Number.parseFloat(e.target.value))}
-            placeholder="Enter credit limit"
+            onChange={(e) => handleInputChange("credit", e.target.value)}
+            placeholder="Enter credit limit (e.g., 1000.50)"
             required
           />
         </div>

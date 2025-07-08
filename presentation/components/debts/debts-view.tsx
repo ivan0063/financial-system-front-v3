@@ -1,51 +1,79 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Header } from "../layout/header"
-import { DebtForm } from "./debt-form"
 import { DebtList } from "./debt-list"
-import { debtRepository } from "@/infrastructure/repositories/api-debt-repository"
+import { DebtForm } from "./debt-form"
+import { StatementUploadModal } from "./statement-upload-modal"
+import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
+import type { DebtAccount } from "@/domain/entities/debt-account"
 import type { Debt } from "@/domain/entities/debt"
-import { Plus } from "lucide-react"
+import { Plus, Upload, Loader2 } from "lucide-react"
 
 export function DebtsView() {
-  const [debts, setDebts] = useState<Debt[]>([])
-  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null)
+  const [debtAccounts, setDebtAccounts] = useState<DebtAccount[]>([])
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [loadingAccounts, setLoadingAccounts] = useState(true)
 
   useEffect(() => {
-    loadDebts()
+    loadDebtAccounts()
   }, [])
 
-  const loadDebts = async () => {
+  const loadDebtAccounts = async () => {
     try {
-      const allDebts = await debtRepository.findAll()
-      setDebts(allDebts)
+      setLoadingAccounts(true)
+      const accounts = await debtAccountRepository.findAll()
+      setDebtAccounts(accounts.filter((account) => account.active))
     } catch (error) {
-      console.error("Error loading debts:", error)
+      console.error("Error loading debt accounts:", error)
+      setDebtAccounts([])
     } finally {
-      setLoading(false)
+      setLoadingAccounts(false)
     }
   }
 
-  const handleDebtCreated = () => {
+  const handleAdd = () => {
+    setEditingDebt(null)
+    setShowForm(true)
+  }
+
+  const handleEdit = (debt: Debt) => {
+    setEditingDebt(debt)
+    setShowForm(true)
+  }
+
+  const handleSuccess = () => {
     setShowForm(false)
-    loadDebts()
+    setEditingDebt(null)
+    setRefreshTrigger((prev) => prev + 1) // Trigger refresh
   }
 
-  const handleDebtDeleted = () => {
-    loadDebts()
+  const handleCancel = () => {
+    setShowForm(false)
+    setEditingDebt(null)
   }
 
-  if (loading) {
+  const handleUploadSuccess = () => {
+    setShowUploadModal(false)
+    setRefreshTrigger((prev) => prev + 1) // Trigger refresh
+  }
+
+  if (loadingAccounts) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
-            <div className="text-lg">Loading debts...</div>
+            <div className="flex items-center gap-2 text-lg">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Loading debt accounts...
+            </div>
           </div>
         </div>
       </div>
@@ -55,31 +83,58 @@ export function DebtsView() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Debts</h2>
-            <p className="text-muted-foreground">Track and manage your individual debts</p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Debts</h2>
+            <p className="text-muted-foreground text-sm sm:text-base">Manage your debt obligations and payments</p>
           </div>
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Debt
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={() => setShowUploadModal(true)} variant="outline" className="flex-1 sm:flex-none">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Statement
+            </Button>
+            <Button onClick={handleAdd} className="flex-1 sm:flex-none" disabled={debtAccounts.length === 0}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Debt
+            </Button>
+          </div>
         </div>
 
-        {showForm && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Create New Debt</CardTitle>
-              <CardDescription>Add a new debt to track</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DebtForm onSuccess={handleDebtCreated} onCancel={() => setShowForm(false)} />
+        {debtAccounts.length === 0 && (
+          <Card className="mb-6 sm:mb-8">
+            <CardContent className="flex flex-col items-center justify-center h-32 space-y-3 text-center">
+              <p className="text-muted-foreground">
+                No debt accounts found. You need to create a debt account before adding debts.
+              </p>
+              <Button variant="outline" size="sm" onClick={() => (window.location.href = "/debt-accounts")}>
+                Create Debt Account
+              </Button>
             </CardContent>
           </Card>
         )}
 
-        <DebtList debts={debts} onDebtDeleted={handleDebtDeleted} />
+        <DebtList onEdit={handleEdit} refreshTrigger={refreshTrigger} />
+
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="mx-4 max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingDebt ? "Edit Debt" : "Create Debt"}</DialogTitle>
+            </DialogHeader>
+            <DebtForm
+              debt={editingDebt}
+              debtAccounts={debtAccounts}
+              onSuccess={handleSuccess}
+              onCancel={handleCancel}
+            />
+          </DialogContent>
+        </Dialog>
+
+        <StatementUploadModal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          onSuccess={handleUploadSuccess}
+        />
       </div>
     </div>
   )
