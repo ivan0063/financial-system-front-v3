@@ -1,80 +1,112 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Header } from "../layout/header"
-import { FinancialStatusService } from "@/application/services/financial-status-service"
-import { debtRepository } from "@/infrastructure/repositories/api-debt-repository"
-import type { Debt } from "@/domain/entities/debt"
 import {
+  RefreshCw,
+  User,
+  CreditCard,
   DollarSign,
   TrendingUp,
-  TrendingDown,
-  AlertCircle,
-  CreditCard,
-  PiggyBank,
   Calendar,
-  Target,
-  Loader2,
+  PiggyBank,
+  AlertTriangle,
+  Wifi,
+  WifiOff,
+  ArrowUp,
+  ArrowDown,
+  Minus,
 } from "lucide-react"
-
-interface FinancialStatus {
-  salary: number
-  savings: number
-  monthlyDebtPaymentAmount: number
-  monthlyFixedExpensesAmount: number
-}
+import { FinancialStatusService, type UserStatusDashboard } from "@/application/services/financial-status-service"
+import { DEFAULT_USER_EMAIL } from "@/infrastructure/api/api-client"
+import { Skeleton } from "@/components/ui/skeleton"
+import { useRouter } from "next/navigation"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export function DashboardView() {
-  const [financialStatus, setFinancialStatus] = useState<FinancialStatus | null>(null)
-  const [almostCompletedDebts, setAlmostCompletedDebts] = useState<Debt[]>([])
+  const [financialStatus, setFinancialStatus] = useState<UserStatusDashboard | null>(null)
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "failed">("checking")
+  const router = useRouter()
 
   const financialStatusService = new FinancialStatusService()
 
-  useEffect(() => {
-    loadDashboardData()
-  }, [])
-
-  const loadDashboardData = async () => {
-    try {
+  const fetchFinancialStatus = async (isRefresh = false) => {
+    if (isRefresh) {
+      setRefreshing(true)
+    } else {
       setLoading(true)
-      setError(null)
+    }
+    setError(null)
+    setConnectionStatus("checking")
 
-      // Load financial status
-      const status = await financialStatusService.execute("jimm0063@gmail.com")
+    try {
+      console.log(`Attempting to fetch financial status for: ${DEFAULT_USER_EMAIL}`)
+      const status = await financialStatusService.execute(DEFAULT_USER_EMAIL)
       setFinancialStatus(status)
-
-      // Load almost completed debts (>80% completed)
-      const allDebts = await debtRepository.findAll()
-      const almostCompleted = allDebts.filter((debt) => {
-        const completionPercentage = (debt.currentInstallment / debt.maxFinancingTerm) * 100
-        return completionPercentage >= 80 && debt.active
-      })
-      setAlmostCompletedDebts(almostCompleted)
+      setConnectionStatus("connected")
+      console.log("Successfully fetched financial status:", status)
     } catch (error) {
-      console.error("Error loading dashboard data:", error)
-      setError("Failed to load dashboard data")
+      console.error("Error fetching financial status:", error)
+      setConnectionStatus("failed")
+
+      if (error instanceof Error) {
+        if (error.message.includes("CORS Error")) {
+          setError(
+            `Connection Error: Cannot connect to API server. Please ensure:
+1. API server is running at the configured URL
+2. CORS is properly configured on the API server
+3. Network connectivity is available
+
+Technical details: ${error.message}`,
+          )
+        } else {
+          setError(error.message)
+        }
+      } else {
+        setError("An unexpected error occurred while fetching financial status")
+      }
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
+  }
+
+  useEffect(() => {
+    fetchFinancialStatus()
+  }, [])
+
+  const handleRefresh = () => {
+    fetchFinancialStatus(true)
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="flex items-center gap-2 text-lg">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Loading dashboard...
-            </div>
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-64 mt-2" />
           </div>
+          <Skeleton className="h-10 w-24" />
+        </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-4 w-20 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     )
@@ -82,250 +114,413 @@ export function DashboardView() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Financial Dashboard</h1>
+            <p className="text-muted-foreground">Connection Error</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {connectionStatus === "failed" ? (
+              <WifiOff className="h-5 w-5 text-red-500" />
+            ) : (
+              <Wifi className="h-5 w-5 text-green-500" />
+            )}
+            <Button onClick={handleRefresh} disabled={refreshing} variant="outline" size="sm">
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+              {refreshing ? "Retrying..." : "Retry"}
+            </Button>
+          </div>
         </div>
+
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="whitespace-pre-line">{error}</AlertDescription>
+        </Alert>
+
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="text-yellow-800">Troubleshooting Steps</CardTitle>
+          </CardHeader>
+          <CardContent className="text-yellow-700">
+            <ol className="list-decimal list-inside space-y-2">
+              <li>
+                Verify the API server is running at:{" "}
+                <code className="bg-yellow-100 px-1 rounded">
+                  {process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.50.180:666"}
+                </code>
+              </li>
+              <li>Check if you can access the API directly in your browser</li>
+              <li>
+                Ensure the API server has CORS configured to allow requests from:{" "}
+                <code className="bg-yellow-100 px-1 rounded">
+                  {typeof window !== "undefined" ? window.location.origin : "this domain"}
+                </code>
+              </li>
+              <li>Verify network connectivity between your device and the API server</li>
+              <li>Check firewall settings that might block the connection</li>
+            </ol>
+          </CardContent>
+        </Card>
       </div>
     )
   }
 
-  const totalExpenses =
-    (financialStatus?.monthlyDebtPaymentAmount || 0) + (financialStatus?.monthlyFixedExpensesAmount || 0)
-  const netIncome = (financialStatus?.salary || 0) - totalExpenses
-  const expenseRatio = financialStatus?.salary ? (totalExpenses / financialStatus.salary) * 100 : 0
-  const emergencyFundTarget = totalExpenses * 6 // 6 months of expenses
-  const emergencyFundProgress = financialStatus?.savings ? (financialStatus.savings / emergencyFundTarget) * 100 : 0
-
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="container mx-auto px-4 py-4 sm:py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Financial Dashboard</h2>
-            <p className="text-muted-foreground text-sm sm:text-base">
-              Overview of your financial status and debt progress
-            </p>
-          </div>
-        </div>
-
-        {/* Financial Overview */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                ${financialStatus?.salary?.toLocaleString() || "0"}
-              </div>
-              <p className="text-xs text-muted-foreground">Your monthly salary</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-              <TrendingDown className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">${totalExpenses.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">{expenseRatio.toFixed(1)}% of income</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Net Income</CardTitle>
-              <TrendingUp className={`h-4 w-4 ${netIncome >= 0 ? "text-green-600" : "text-red-600"}`} />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${netIncome >= 0 ? "text-green-600" : "text-red-600"}`}>
-                ${netIncome.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">After all expenses</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Savings</CardTitle>
-              <PiggyBank className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                ${financialStatus?.savings?.toLocaleString() || "0"}
-              </div>
-              <p className="text-xs text-muted-foreground">Emergency fund</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Expense Breakdown */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
-                Expense Breakdown
-              </CardTitle>
-              <CardDescription>Monthly expense distribution</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Debt Payments</span>
-                  <span className="font-medium">
-                    ${financialStatus?.monthlyDebtPaymentAmount?.toLocaleString() || "0"}
-                  </span>
-                </div>
-                <Progress
-                  value={
-                    financialStatus?.salary
-                      ? (financialStatus.monthlyDebtPaymentAmount / financialStatus.salary) * 100
-                      : 0
-                  }
-                  className="h-2"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Fixed Expenses</span>
-                  <span className="font-medium">
-                    ${financialStatus?.monthlyFixedExpensesAmount?.toLocaleString() || "0"}
-                  </span>
-                </div>
-                <Progress
-                  value={
-                    financialStatus?.salary
-                      ? (financialStatus.monthlyFixedExpensesAmount / financialStatus.salary) * 100
-                      : 0
-                  }
-                  className="h-2"
-                />
-              </div>
-
-              <div className="pt-2 border-t">
-                <div className="flex justify-between text-sm font-medium">
-                  <span>Total Expenses</span>
-                  <span>${totalExpenses.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                  <span>Expense Ratio</span>
-                  <span>{expenseRatio.toFixed(1)}% of income</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Emergency Fund Status
-              </CardTitle>
-              <CardDescription>6-month expense target</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Current Savings</span>
-                  <span className="font-medium">${financialStatus?.savings?.toLocaleString() || "0"}</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Target (6 months)</span>
-                  <span>${emergencyFundTarget.toLocaleString()}</span>
-                </div>
-                <Progress value={Math.min(emergencyFundProgress, 100)} className="h-3" />
-                <div className="text-center text-sm">
-                  <span
-                    className={`font-medium ${emergencyFundProgress >= 100 ? "text-green-600" : "text-orange-600"}`}
-                  >
-                    {emergencyFundProgress.toFixed(1)}% Complete
-                  </span>
-                </div>
-              </div>
-
-              {emergencyFundProgress < 100 && (
-                <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
-                  <p className="text-sm text-orange-800">
-                    You need ${(emergencyFundTarget - (financialStatus?.savings || 0)).toLocaleString()} more to reach
-                    your emergency fund goal.
-                  </p>
-                </div>
-              )}
-
-              {emergencyFundProgress >= 100 && (
-                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm text-green-800">🎉 Congratulations! You've reached your emergency fund goal.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Almost Completed Debts */}
+  if (!financialStatus) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Almost Completed Debts
-            </CardTitle>
-            <CardDescription>Debts that are 80% or more completed</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {almostCompletedDebts.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">No debts are close to completion yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {almostCompletedDebts.map((debt) => {
-                  const completionPercentage = (debt.currentInstallment / debt.maxFinancingTerm) * 100
-                  const remainingAmount = debt.originalAmount - debt.monthlyPayment * debt.currentInstallment
-                  const remainingInstallments = debt.maxFinancingTerm - debt.currentInstallment
-
-                  return (
-                    <div key={debt.id} className="p-4 border rounded-lg space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium">{debt.description}</h4>
-                            <Badge variant="outline">Code: {debt.debtAccount?.code || "N/A"}</Badge>
-                            <Badge variant="secondary">{completionPercentage.toFixed(1)}% Complete</Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            <p>Original Amount: ${debt.originalAmount.toLocaleString()}</p>
-                            <p>Monthly Payment: ${debt.monthlyPayment.toLocaleString()}</p>
-                            <p>Remaining: ${Math.max(remainingAmount, 0).toLocaleString()}</p>
-                            <p>Installments Left: {remainingInstallments}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>
-                            {debt.currentInstallment} / {debt.maxFinancingTerm}
-                          </span>
-                        </div>
-                        <Progress value={completionPercentage} className="h-2" />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+          <CardContent className="flex items-center justify-center h-64">
+            <div className="text-center space-y-4">
+              <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto" />
+              <p className="text-muted-foreground">No financial status data available.</p>
+              <Button onClick={() => fetchFinancialStatus()} variant="outline">
+                Try Again
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
+    )
+  }
+
+  const {
+    salary,
+    savings,
+    monthlyDebtPaymentAmount,
+    monthlyFixedExpensesAmount,
+    userDebtAccounts,
+    almostCompletedDebts,
+    userFixedExpenses,
+  } = financialStatus
+
+  const totalDebtBalance = userDebtAccounts.reduce((sum, account) => sum + (account.credit || 0), 0)
+  const totalCreditLimit = userDebtAccounts.reduce((sum, account) => sum + account.credit, 0)
+  const monthlyNetIncome = salary - monthlyDebtPaymentAmount - monthlyFixedExpensesAmount
+  const totalMonthlyExpenses = monthlyDebtPaymentAmount + monthlyFixedExpensesAmount
+
+  return (
+    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Financial Dashboard</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Your comprehensive financial overview</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Wifi className="h-4 w-4 text-green-500" />
+            <span className="text-sm text-green-600">Connected</span>
+          </div>
+          <Button onClick={handleRefresh} disabled={refreshing} variant="outline" size="sm">
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Financial Overview - Redesigned for Better Comparison */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Income vs Expenses Comparison */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Monthly Financial Overview
+            </CardTitle>
+            <CardDescription>Income vs Expenses breakdown</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-3">
+              {/* Income */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ArrowUp className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium text-green-700">Monthly Income</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Salary</span>
+                    <span className="font-bold text-2xl text-green-600">${salary.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Expenses */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ArrowDown className="h-4 w-4 text-red-500" />
+                  <span className="text-sm font-medium text-red-700">Monthly Expenses</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Debt Payments</span>
+                    <span className="font-medium text-red-600">${monthlyDebtPaymentAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Fixed Expenses</span>
+                    <span className="font-medium text-red-600">${monthlyFixedExpensesAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Total</span>
+                      <span className="font-bold text-xl text-red-600">${totalMonthlyExpenses.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Net Income */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Minus className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-medium text-blue-700">Net Income</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Available</span>
+                    <span className={`font-bold text-2xl ${monthlyNetIncome >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      ${monthlyNetIncome.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{monthlyNetIncome >= 0 ? "Surplus" : "Deficit"}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Progress Bar */}
+            <div className="mt-6 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span>Expense Ratio</span>
+                <span>{((totalMonthlyExpenses / salary) * 100).toFixed(1)}% of income</span>
+              </div>
+              <Progress value={(totalMonthlyExpenses / salary) * 100} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Debt: {((monthlyDebtPaymentAmount / salary) * 100).toFixed(1)}%</span>
+                <span>Fixed: {((monthlyFixedExpensesAmount / salary) * 100).toFixed(1)}%</span>
+                <span>Available: {((monthlyNetIncome / salary) * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Savings Card */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Savings</CardTitle>
+            <PiggyBank className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">${savings.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              {savings > 0 ? `${(savings / salary).toFixed(1)} months of salary` : "No savings"}
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Emergency Fund Status */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Emergency Fund</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">
+                {savings >= totalMonthlyExpenses * 6 ? (
+                  <span className="text-green-600">✓ Covered</span>
+                ) : (
+                  <span className="text-yellow-600">Partial</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Target: ${(totalMonthlyExpenses * 6).toLocaleString()} (6 months expenses)
+              </p>
+              <Progress value={Math.min((savings / (totalMonthlyExpenses * 6)) * 100, 100)} className="h-1" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Debt Accounts Overview */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Debt Accounts ({userDebtAccounts.length})
+            </CardTitle>
+            <Button onClick={() => router.push("/debt-accounts")} variant="outline" size="sm">
+              Manage All
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3 mb-4">
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Total Credit Limit</p>
+                <p className="text-xl font-bold">${totalCreditLimit.toLocaleString()}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Active Accounts</p>
+                <p className="text-xl font-bold text-blue-600">{userDebtAccounts.filter((acc) => acc.active).length}</p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">Monthly Payments</p>
+                <p className="text-xl font-bold text-red-600">${monthlyDebtPaymentAmount.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {userDebtAccounts.slice(0, 3).map((account) => (
+                <div key={account.code} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium truncate">{account.name}</p>
+                      <Badge variant={account.active ? "default" : "secondary"} className="text-xs">
+                        {account.active ? "Active" : "Inactive"}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {account.accountStatementType}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {account.financialProvider?.name || "No Provider"} • Pay Day: {account.payDay}
+                    </p>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <p className="font-medium">${account.credit.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Credit Limit</p>
+                  </div>
+                </div>
+              ))}
+              {userDebtAccounts.length > 3 && (
+                <div className="text-center pt-2">
+                  <Button onClick={() => router.push("/debt-accounts")} variant="ghost" size="sm">
+                    View {userDebtAccounts.length - 3} more accounts
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Almost Completed Debts */}
+      {almostCompletedDebts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Almost Completed Debts
+            </CardTitle>
+            <CardDescription>Debts that are close to being paid off</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {almostCompletedDebts.map((debt, index) => (
+                <div
+                  key={`${debt.code}-${index}`}
+                  className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50"
+                >
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium truncate">{debt.description}</p>
+                      {debt.code && (
+                        <Badge variant="outline" className="text-xs">
+                          {debt.code}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {debt.currentInstallment} of {debt.maxFinancingTerm} installments
+                    </p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                      <div
+                        className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(debt.currentInstallment / debt.maxFinancingTerm) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-right ml-4">
+                    <p className="font-medium text-yellow-700">${debt.monthlyPayment.toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">monthly payment</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Fixed Expenses */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Fixed Expenses ({userFixedExpenses.length})
+            </CardTitle>
+            <Button onClick={() => router.push("/fixed-expenses")} variant="outline" size="sm">
+              Manage All
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {userFixedExpenses.slice(0, 5).map((expense) => (
+              <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="space-y-1 flex-1 min-w-0">
+                  <p className="font-medium truncate">{expense.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {expense.fixedExpenseCatalog.name} • Pay Day: {expense.paymentDay}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-medium">${expense.monthlyCost.toLocaleString()}</p>
+                </div>
+              </div>
+            ))}
+            {userFixedExpenses.length > 5 && (
+              <div className="text-center pt-2">
+                <Button onClick={() => router.push("/fixed-expenses")} variant="ghost" size="sm">
+                  View {userFixedExpenses.length - 5} more expenses
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <Button onClick={() => router.push("/debt-accounts")} variant="outline" className="justify-start">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Manage Accounts
+            </Button>
+            <Button onClick={() => router.push("/debts")} variant="outline" className="justify-start">
+              <DollarSign className="h-4 w-4 mr-2" />
+              View Debts
+            </Button>
+            <Button onClick={() => router.push("/fixed-expenses")} variant="outline" className="justify-start">
+              <Calendar className="h-4 w-4 mr-2" />
+              Fixed Expenses
+            </Button>
+            <Button onClick={() => router.push("/profile")} variant="outline" className="justify-start">
+              <User className="h-4 w-4 mr-2" />
+              Profile Settings
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

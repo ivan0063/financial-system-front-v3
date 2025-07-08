@@ -1,70 +1,40 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Header } from "../layout/header"
-import { FinancialProviderForm } from "./financial-provider-form"
 import { FinancialProviderList } from "./financial-provider-list"
-import { financialProviderRepository } from "@/infrastructure/repositories/api-financial-provider-repository"
+import { FinancialProviderForm } from "./financial-provider-form"
 import type { FinancialProvider } from "@/domain/entities/financial-provider"
-import { Plus, Loader2 } from "lucide-react"
 
 export function FinancialProvidersView() {
-  const [financialProviders, setFinancialProviders] = useState<FinancialProvider[]>([])
-  const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingProvider, setEditingProvider] = useState<FinancialProvider | null>(null)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
-  useEffect(() => {
-    loadFinancialProviders()
-  }, [])
-
-  const loadFinancialProviders = async () => {
-    try {
-      const providers = await financialProviderRepository.findAll()
-      setFinancialProviders(providers)
-    } catch (error) {
-      console.error("Error loading financial providers:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleProviderCreated = () => {
-    setShowForm(false)
+  const handleAdd = () => {
     setEditingProvider(null)
-    loadFinancialProviders()
+    setShowForm(true)
   }
 
-  const handleProviderDeleted = () => {
-    loadFinancialProviders()
-  }
-
-  const handleProviderEdit = (provider: FinancialProvider) => {
+  const handleEdit = (provider: FinancialProvider) => {
     setEditingProvider(provider)
     setShowForm(true)
   }
 
-  const handleCancelForm = () => {
+  const handleSuccess = () => {
+    setShowForm(false)
+    setEditingProvider(null)
+    setRefreshTrigger((prev) => prev + 1) // Trigger refresh
+  }
+
+  const handleCancel = () => {
     setShowForm(false)
     setEditingProvider(null)
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="flex items-center gap-2 text-lg">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Loading financial providers...
-            </div>
-          </div>
-        </div>
-      </div>
-    )
+  const handleProviderDeleted = () => {
+    setRefreshTrigger((prev) => prev + 1) // Trigger refresh
   }
 
   return (
@@ -75,56 +45,21 @@ export function FinancialProvidersView() {
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Financial Providers</h2>
             <p className="text-muted-foreground text-sm sm:text-base">
-              Manage your financial institutions and providers
+              Manage your financial institutions and service providers
             </p>
           </div>
-          <Button onClick={() => setShowForm(true)} className="flex-1 sm:flex-none">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Provider
-          </Button>
         </div>
 
-        {financialProviders.length === 0 && !showForm && (
-          <Card className="mb-6 sm:mb-8">
-            <CardContent className="flex flex-col items-center justify-center h-32 space-y-3 text-center">
-              <p className="text-muted-foreground">
-                No financial providers found. Create your first financial provider to get started.
-              </p>
-              <Button onClick={() => setShowForm(true)} variant="outline" size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Provider
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        <FinancialProviderList onAdd={handleAdd} onEdit={handleEdit} refreshTrigger={refreshTrigger} />
 
-        {showForm && (
-          <Card className="mb-6 sm:mb-8">
-            <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">
-                {editingProvider ? "Edit Financial Provider" : "Create New Financial Provider"}
-              </CardTitle>
-              <CardDescription>
-                {editingProvider
-                  ? "Update the financial provider information"
-                  : "Add a new financial provider to your system"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FinancialProviderForm
-                provider={editingProvider}
-                onSuccess={handleProviderCreated}
-                onCancel={handleCancelForm}
-              />
-            </CardContent>
-          </Card>
-        )}
-
-        <FinancialProviderList
-          financialProviders={financialProviders}
-          onProviderDeleted={handleProviderDeleted}
-          onProviderEdit={handleProviderEdit}
-        />
+        <Dialog open={showForm} onOpenChange={setShowForm}>
+          <DialogContent className="mx-4 max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingProvider ? "Edit Financial Provider" : "Create Financial Provider"}</DialogTitle>
+            </DialogHeader>
+            <FinancialProviderForm provider={editingProvider} onSuccess={handleSuccess} onCancel={handleCancel} />
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

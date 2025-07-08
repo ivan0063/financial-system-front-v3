@@ -13,4 +13,15 @@ export class StatementExtractionService implements ExtractDebtsFromStatementUseC
       file,
     )
   }
+
+  // Add the method that the statement upload component is looking for
+  async extractDebtsFromStatement(
+    file: File,
+    debtAccountCode: string,
+    statementType: "MERCADO_PAGO" | "RAPPI" | "UNIVERSAL" | "MANUAL" = "MANUAL",
+  ): Promise<Debt[]> {
+    return this.execute(debtAccountCode, file, statementType)
+  }
 }
+
+export const statementExtractionService = new StatementExtractionService()
