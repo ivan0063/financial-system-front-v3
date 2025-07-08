@@ -12,6 +12,7 @@ import { Loader2, AlertCircle } from "lucide-react"
 import { financialProviderRepository } from "@/infrastructure/repositories/api-financial-provider-repository"
 import { financialProviderCatalogRepository } from "@/infrastructure/repositories/api-financial-provider-catalog-repository"
 import type { FinancialProviderCatalog } from "@/domain/entities/financial-provider-catalog"
+import { useToast } from "@/hooks/use-toast"
 
 interface FinancialProviderFormProps {
   onSuccess: () => void
@@ -28,6 +29,7 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
   const [loading, setLoading] = useState(false)
   const [loadingCatalogs, setLoadingCatalogs] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   // Load financial provider catalogs on component mount
   useEffect(() => {
@@ -40,13 +42,18 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
       } catch (error) {
         console.error("Error loading financial provider catalogs:", error)
         setError("Failed to load financial provider catalogs. Please try again.")
+        toast({
+          title: "Error",
+          description: "Failed to load financial provider catalogs",
+          variant: "destructive",
+        })
       } finally {
         setLoadingCatalogs(false)
       }
     }
 
     loadCatalogs()
-  }, [])
+  }, [toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,10 +74,23 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
         active: true,
         financialProviderCatalog: `/jpa/financialProviderCatalog/${formData.catalogId}`, // URI format
       })
+
+      toast({
+        title: "Success",
+        description: "Financial provider created successfully",
+      })
+
       onSuccess()
     } catch (error) {
       console.error("Error creating financial provider:", error)
-      setError(error instanceof Error ? error.message : "Failed to create financial provider. Please try again.")
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create financial provider. Please try again."
+      setError(errorMessage)
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      })
     } finally {
       setLoading(false)
     }

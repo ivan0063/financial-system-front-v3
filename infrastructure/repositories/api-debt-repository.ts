@@ -1,12 +1,11 @@
-import type { DebtRepository } from "@/domain/repositories/debt-repository"
 import type { Debt } from "@/domain/entities/debt"
+import type { DebtRepository } from "@/domain/repositories/debt-repository"
 import { apiClient } from "../api/api-client"
-import { debtManagementService } from "@/application/services/debt-management-service"
 
 export class ApiDebtRepository implements DebtRepository {
   async findAll(): Promise<Debt[]> {
     try {
-      const response = await apiClient.get<any>("/jpa/debt")
+      const response = await apiClient.get<{ _embedded: { debt: Debt[] } }>("/jpa/debt")
       return response._embedded?.debt || []
     } catch (error) {
       console.error("Error fetching debts:", error)
@@ -14,32 +13,47 @@ export class ApiDebtRepository implements DebtRepository {
     }
   }
 
-  async findByDebtAccountCode(debtAccountCode: string): Promise<Debt[]> {
+  async findById(id: number): Promise<Debt | null> {
     try {
-      const response = await apiClient.get<any>(
-        `/jpa/debt/search/findAllDebtsByDebtAccount_CodeAndActiveTrue?debtAccountCode=${debtAccountCode}`,
-      )
-      return response._embedded?.debt || []
+      return await apiClient.get<Debt>(`/jpa/debt/${id}`)
     } catch (error) {
-      console.error(`Error fetching debts for account ${debtAccountCode}:`, error)
-      throw error
+      console.error(`Error fetching debt ${id}:`, error)
+      return null
     }
   }
 
   async create(debt: Omit<Debt, "id" | "createdAt" | "updatedAt">): Promise<Debt> {
     try {
-      return await apiClient.post<Debt>("/jpa/debt", debt)
+      // Convert the debtAccount code to URI format for Spring Data REST
+      const debtData = {
+        ...debt,
+        debtAccount: `/jpa/debtAccount/${debt.debtAccountCode}`, // URI format for debt account relationship
+      }
+
+      // Remove the debtAccountCode since we're using the URI format
+      delete (debtData as any).debtAccountCode
+
+      return await apiClient.post<Debt>("/jpa/debt", debtData)
     } catch (error) {
       console.error("Error creating debt:", error)
       throw error
     }
   }
 
-  async update(id: number, debt: Partial<Debt>): Promise<Debt> {
+  async update(debt: Debt): Promise<Debt> {
     try {
-      return await apiClient.put<Debt>(`/jpa/debt/${id}`, debt)
+      // Convert the debtAccount code to URI format for Spring Data REST
+      const debtData = {
+        ...debt,
+        debtAccount: `/jpa/debtAccount/${debt.debtAccountCode}`, // URI format for debt account relationship
+      }
+
+      // Remove the debtAccountCode since we're using the URI format
+      delete (debtData as any).debtAccountCode
+
+      return await apiClient.put<Debt>(`/jpa/debt/${debt.id}`, debtData)
     } catch (error) {
-      console.error(`Error updating debt ${id}:`, error)
+      console.error(`Error updating debt ${debt.id}:`, error)
       throw error
     }
   }
@@ -51,14 +65,6 @@ export class ApiDebtRepository implements DebtRepository {
       console.error(`Error deleting debt ${id}:`, error)
       throw error
     }
-  }
-
-  async addDebtsToAccount(debtAccountCode: string, debts: Debt[]): Promise<string> {
-    return await debtManagementService.addDebtsToAccount(debtAccountCode, debts)
-  }
-
-  async payOffDebts(debtAccountCode: string): Promise<string> {
-    return await debtManagementService.payOffDebts(debtAccountCode)
   }
 }
 

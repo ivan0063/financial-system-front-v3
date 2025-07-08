@@ -1,30 +1,66 @@
-import type { FixedExpenseRepository } from "@/domain/repositories/fixed-expense-repository"
 import type { FixedExpense } from "@/domain/entities/fixed-expense"
-import { apiClient } from "../api/api-client"
+import type { FixedExpenseRepository } from "@/domain/repositories/fixed-expense-repository"
+import { apiClient, DEFAULT_USER_EMAIL } from "../api/api-client"
 
 export class ApiFixedExpenseRepository implements FixedExpenseRepository {
   async findAll(): Promise<FixedExpense[]> {
-    const response = await apiClient.get<any>("/jpa/fixedExpense")
-    return response._embedded?.fixedExpense || []
+    try {
+      const response = await apiClient.get<{ _embedded: { fixedExpense: FixedExpense[] } }>("/jpa/fixedExpense")
+      return response._embedded?.fixedExpense || []
+    } catch (error) {
+      console.error("Error fetching fixed expenses:", error)
+      throw error
+    }
   }
 
-  async findByUserId(userId: string): Promise<FixedExpense[]> {
-    const response = await apiClient.get<any>(
-      `/jpa/fixedExpense/search/findAllByDebtSysUserAndActiveTrue?user=${userId}`,
-    )
-    return response._embedded?.fixedExpense || []
+  async findById(id: number): Promise<FixedExpense | null> {
+    try {
+      return await apiClient.get<FixedExpense>(`/jpa/fixedExpense/${id}`)
+    } catch (error) {
+      console.error(`Error fetching fixed expense ${id}:`, error)
+      return null
+    }
   }
 
-  async create(expense: Omit<FixedExpense, "id">): Promise<FixedExpense> {
-    return apiClient.post<FixedExpense>("/jpa/fixedExpense", expense)
+  async create(fixedExpense: Omit<FixedExpense, "id" | "createdAt" | "updatedAt">): Promise<FixedExpense> {
+    try {
+      // Convert the fixedExpenseCatalog ID to URI format for Spring Data REST
+      const fixedExpenseData = {
+        ...fixedExpense,
+        debtSysUser: `/jpa/user/${DEFAULT_USER_EMAIL}`, // URI format for user relationship
+        fixedExpenseCatalog: `/jpa/fixedExpenseCatalog/${fixedExpense.fixedExpenseCatalog}`, // URI format for catalog relationship
+      }
+
+      return await apiClient.post<FixedExpense>("/jpa/fixedExpense", fixedExpenseData)
+    } catch (error) {
+      console.error("Error creating fixed expense:", error)
+      throw error
+    }
   }
 
-  async update(id: number, expense: Partial<FixedExpense>): Promise<FixedExpense> {
-    return apiClient.put<FixedExpense>(`/jpa/fixedExpense/${id}`, expense)
+  async update(fixedExpense: FixedExpense): Promise<FixedExpense> {
+    try {
+      // Convert the fixedExpenseCatalog ID to URI format for Spring Data REST
+      const fixedExpenseData = {
+        ...fixedExpense,
+        debtSysUser: `/jpa/user/${DEFAULT_USER_EMAIL}`, // URI format for user relationship
+        fixedExpenseCatalog: `/jpa/fixedExpenseCatalog/${fixedExpense.fixedExpenseCatalog}`, // URI format for catalog relationship
+      }
+
+      return await apiClient.put<FixedExpense>(`/jpa/fixedExpense/${fixedExpense.id}`, fixedExpenseData)
+    } catch (error) {
+      console.error(`Error updating fixed expense ${fixedExpense.id}:`, error)
+      throw error
+    }
   }
 
   async delete(id: number): Promise<void> {
-    return apiClient.delete(`/jpa/fixedExpense/${id}`)
+    try {
+      await apiClient.delete(`/jpa/fixedExpense/${id}`)
+    } catch (error) {
+      console.error(`Error deleting fixed expense ${id}:`, error)
+      throw error
+    }
   }
 }
 
