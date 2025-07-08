@@ -28,4 +28,4 @@ services:
       - debt-control-frontend
     restart: unless-stopped
     profiles:
-      - production
+      - with-nginx

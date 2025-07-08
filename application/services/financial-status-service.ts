@@ -40,6 +40,13 @@ export interface FinancialStatusResponse {
 
 export class FinancialStatusService implements GetFinancialStatusUseCase {
   async execute(email: string): Promise<FinancialStatusResponse> {
-    return apiClient.get<FinancialStatusResponse>(`/financial/status/${email}`)
+    try {
+      // The API returns JSON even though the spec says string
+      const response = await apiClient.get<FinancialStatusResponse>(`/financial/status/${email}`)
+      return response
+    } catch (error) {
+      console.error("Error fetching financial status:", error)
+      throw new Error("Failed to fetch financial status")
+    }
   }
 }

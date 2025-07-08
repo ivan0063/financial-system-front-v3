@@ -1,48 +1,50 @@
 # Docker Deployment Guide
 
-This guide explains how to deploy the Debt Control Frontend application using Docker.
+This guide explains how to deploy the Debt Control Frontend using Docker.
 
 ## Prerequisites
 
 - Docker installed and running
-- Docker Compose (optional, for advanced deployments)
-- Access to your API server
+- Docker Compose (optional, for advanced setups)
 
 ## Quick Start
 
 ### 1. Environment Setup
 
-Copy the environment template and configure your API URL:
+Create a `.env` file or set environment variables:
 
 \`\`\`bash
-cp .env.example .env
-\`\`\`
-
-Edit `.env` and set your API URL:
-\`\`\`env
-NEXT_PUBLIC_API_BASE_URL=http://your-api-host:port
-\`\`\`
-
-### 2. Simple Deployment
-
-Use the deployment script for quick setup:
-
-\`\`\`bash
-# Set your API URL and deploy
 export API_BASE_URL=http://your-api-host:port
+\`\`\`
+
+### 2. Deploy with Script
+
+\`\`\`bash
 chmod +x deploy.sh
 ./deploy.sh
 \`\`\`
 
-### 3. Manual Docker Build
-
-If you prefer manual control:
+### 3. Deploy with Docker Compose
 
 \`\`\`bash
-# Build the image
-docker build -t debt-control-frontend .
+# Basic deployment
+API_BASE_URL=http://your-api-host:port docker-compose up --build -d
 
-# Run the container
+# With nginx reverse proxy
+API_BASE_URL=http://your-api-host:port docker-compose --profile with-nginx up --build -d
+\`\`\`
+
+## Manual Deployment
+
+### Build Image
+
+\`\`\`bash
+docker build -t debt-control-frontend .
+\`\`\`
+
+### Run Container
+
+\`\`\`bash
 docker run -d \
   --name debt-control-frontend \
   -p 3000:3000 \
@@ -51,170 +53,136 @@ docker run -d \
   debt-control-frontend
 \`\`\`
 
-## Docker Compose Deployment
-
-For production deployments with additional services:
-
-### Basic Deployment
-
-\`\`\`bash
-# Set environment variables
-export API_BASE_URL=http://your-api-host:port
-
-# Deploy
-docker-compose up --build -d
-\`\`\`
-
-### Production Deployment with Nginx
-
-\`\`\`bash
-# Deploy with nginx reverse proxy
-docker-compose --profile production up --build -d
-\`\`\`
-
-## Configuration Options
+## Configuration
 
 ### Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `NEXT_PUBLIC_API_BASE_URL` | API server URL | `http://192.168.50.180:666` |
+| `NEXT_PUBLIC_API_BASE_URL` | Backend API URL | `http://192.168.50.180:666` |
 | `PORT` | Application port | `3000` |
-| `NODE_ENV` | Environment mode | `production` |
+| `NODE_ENV` | Environment | `production` |
 
-### Docker Run Options
-
-\`\`\`bash
-docker run -d \
-  --name debt-control-frontend \
-  -p 3000:3000 \
-  -e NEXT_PUBLIC_API_BASE_URL=http://api.example.com:8080 \
-  -e NODE_ENV=production \
-  --restart unless-stopped \
-  --health-cmd="curl -f http://localhost:3000/api/health || exit 1" \
-  --health-interval=30s \
-  --health-timeout=10s \
-  --health-retries=3 \
-  debt-control-frontend
-\`\`\`
-
-## Health Monitoring
+### Health Check
 
 The application includes a health check endpoint:
 
 \`\`\`bash
-# Check application health
 curl http://localhost:3000/api/health
 \`\`\`
 
-Response:
-\`\`\`json
-{
-  "status": "ok",
-  "timestamp": "2024-01-07T12:00:00.000Z",
-  "uptime": 3600,
-  "environment": "production",
-  "apiBaseUrl": "http://your-api-host:port"
-}
+## Monitoring
+
+### View Logs
+
+\`\`\`bash
+docker logs debt-control-frontend
+\`\`\`
+
+### Container Status
+
+\`\`\`bash
+docker ps --filter name=debt-control-frontend
+\`\`\`
+
+### Resource Usage
+
+\`\`\`bash
+docker stats debt-control-frontend
 \`\`\`
 
 ## Troubleshooting
 
-### Container Logs
-
-\`\`\`bash
-# View container logs
-docker logs debt-control-frontend
-
-# Follow logs in real-time
-docker logs -f debt-control-frontend
-\`\`\`
-
 ### Common Issues
 
-1. **API Connection Failed**
-   - Verify API URL is correct and accessible
-   - Check network connectivity between containers
-   - Ensure API server is running
-
-2. **Port Already in Use**
+1. **Container won't start**
    \`\`\`bash
-   # Use different port
-   docker run -p 8080:3000 ...
+   docker logs debt-control-frontend
    \`\`\`
 
-3. **Container Won't Start**
-   \`\`\`bash
-   # Check container status
-   docker ps -a
-   
-   # Inspect container
-   docker inspect debt-control-frontend
-   \`\`\`
+2. **API connection issues**
+   - Check `NEXT_PUBLIC_API_BASE_URL` environment variable
+   - Verify API server is accessible from container
 
-### Performance Tuning
+3. **Port conflicts**
+   - Change the port mapping: `-p 8080:3000`
 
-For production deployments:
+### Debug Mode
+
+Run container in interactive mode:
 
 \`\`\`bash
-# Limit memory usage
-docker run --memory=512m --cpus=1.0 ...
-
-# Use specific restart policy
-docker run --restart=on-failure:3 ...
+docker run -it --rm \
+  -p 3000:3000 \
+  -e NEXT_PUBLIC_API_BASE_URL=http://your-api-host:port \
+  debt-control-frontend sh
 \`\`\`
 
-## Updating the Application
+## Production Considerations
+
+### SSL/HTTPS
+
+For production, use a reverse proxy like nginx:
+
+\`\`\`yaml
+# docker-compose.yml
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+\`\`\`
+
+### Performance
+
+- Use multi-stage builds (already implemented)
+- Enable gzip compression in reverse proxy
+- Set up CDN for static assets
+
+### Security
+
+- Run as non-root user (already implemented)
+- Use secrets for sensitive environment variables
+- Enable security headers in reverse proxy
+
+## Scaling
+
+### Docker Swarm
 
 \`\`\`bash
-# Pull latest changes
-git pull origin main
-
-# Rebuild and redeploy
-./deploy.sh
+docker service create \
+  --name debt-control-frontend \
+  --replicas 3 \
+  --publish 3000:3000 \
+  -e NEXT_PUBLIC_API_BASE_URL=http://your-api-host:port \
+  debt-control-frontend
 \`\`\`
 
-## Backup and Maintenance
+### Kubernetes
 
-### Container Backup
-
-\`\`\`bash
-# Export container
-docker export debt-control-frontend > debt-control-backup.tar
-
-# Import container
-docker import debt-control-backup.tar debt-control-frontend:backup
-\`\`\`
-
-### Cleanup
-
-\`\`\`bash
-# Remove container
-docker stop debt-control-frontend
-docker rm debt-control-frontend
-
-# Remove image
-docker rmi debt-control-frontend
-
-# Clean up unused resources
-docker system prune -a
-\`\`\`
-
-## Security Considerations
-
-1. **Environment Variables**: Never commit sensitive data to version control
-2. **Network Security**: Use HTTPS in production
-3. **Container Security**: Run containers with non-root user (already configured)
-4. **Resource Limits**: Set appropriate memory and CPU limits
-
-## Production Checklist
-
-- [ ] Environment variables configured
-- [ ] HTTPS/SSL certificates installed
-- [ ] Health checks configured
-- [ ] Monitoring and logging set up
-- [ ] Backup strategy implemented
-- [ ] Resource limits configured
-- [ ] Security policies applied
-
-For additional support, check the application logs or contact the development team.
+\`\`\`yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: debt-control-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: debt-control-frontend
+  template:
+    metadata:
+      labels:
+        app: debt-control-frontend
+    spec:
+      containers:
+      - name: debt-control-frontend
+        image: debt-control-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_BASE_URL
+          value: "http://your-api-host:port"

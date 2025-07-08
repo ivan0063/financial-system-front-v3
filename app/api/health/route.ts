@@ -7,8 +7,8 @@ export async function GET() {
       status: "ok",
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
-      environment: process.env.NODE_ENV || "development",
-      apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "not configured",
+      environment: process.env.NODE_ENV,
+      apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
     }
 
     return NextResponse.json(healthCheck, { status: 200 })
@@ -16,8 +16,8 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "error",
+        message: "Health check failed",
         timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     )
