@@ -1,19 +1,19 @@
 "use client"
 
 import type React from "react"
+
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle, Save, X } from "lucide-react"
 import { financialProviderRepository } from "@/infrastructure/repositories/api-financial-provider-repository"
 import { financialProviderCatalogRepository } from "@/infrastructure/repositories/api-financial-provider-catalog-repository"
 import type { FinancialProvider } from "@/domain/entities/financial-provider"
 import type { FinancialProviderCatalog } from "@/domain/entities/financial-provider-catalog"
 import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from "lucide-react"
 
 interface FinancialProviderFormProps {
   provider?: FinancialProvider | null
@@ -25,83 +25,64 @@ export function FinancialProviderForm({ provider, onSuccess, onCancel }: Financi
   const [formData, setFormData] = useState({
     code: "",
     name: "",
-    catalogId: "",
+    financialProviderCatalogId: "",
+    active: true,
   })
   const [catalogs, setCatalogs] = useState<FinancialProviderCatalog[]>([])
   const [loading, setLoading] = useState(false)
-  const [loadingCatalogs, setLoadingCatalogs] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [catalogsLoading, setCatalogsLoading] = useState(true)
   const { toast } = useToast()
 
-  // Load financial provider catalogs and populate form if editing
   useEffect(() => {
-    const loadCatalogs = async () => {
-      try {
-        setLoadingCatalogs(true)
-        const catalogsData = await financialProviderCatalogRepository.findAll()
-        setCatalogs(catalogsData)
-        setError(null)
-      } catch (error) {
-        console.error("Error loading financial provider catalogs:", error)
-        setError("Failed to load financial provider catalogs. Please try again.")
-        toast({
-          title: "Error",
-          description: "Failed to load financial provider catalogs",
-          variant: "destructive",
-        })
-      } finally {
-        setLoadingCatalogs(false)
-      }
-    }
-
     loadCatalogs()
-  }, [toast])
+  }, [])
 
-  // Populate form when editing
   useEffect(() => {
     if (provider) {
       setFormData({
         code: provider.code,
         name: provider.name,
-        catalogId: provider.financialProviderCatalog?.id?.toString() || "",
-      })
-    } else {
-      setFormData({
-        code: "",
-        name: "",
-        catalogId: "",
+        financialProviderCatalogId: provider.financialProviderCatalog.code,
+        active: provider.active,
       })
     }
   }, [provider])
 
+  const loadCatalogs = async () => {
+    try {
+      const catalogList = await financialProviderCatalogRepository.findAll()
+      setCatalogs(catalogList)
+    } catch (error) {
+      console.error("Error loading financial provider catalogs:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load financial provider catalogs",
+        variant: "destructive",
+      })
+    } finally {
+      setCatalogsLoading(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    if (!formData.catalogId) {
-      setError("Please select a financial provider catalog.")
-      return
-    }
-
     setLoading(true)
-    setError(null)
 
     try {
       const providerData = {
         code: formData.code,
         name: formData.name,
-        active: true,
-        financialProviderCatalog: `/jpa/financialProviderCatalog/${formData.catalogId}`, // URI format
+        financialProviderCatalog: `/jpa/financialProviderCatalog/${formData.financialProviderCatalogId}`,
+        active: formData.active,
       }
 
       if (provider) {
-        // Update existing provider
-        await financialProviderRepository.update(providerData)
+        await financialProviderRepository.update(provider.code, providerData)
         toast({
           title: "Success",
           description: "Financial provider updated successfully",
         })
       } else {
-        // Create new provider
         await financialProviderRepository.create(providerData)
         toast({
           title: "Success",
@@ -112,12 +93,9 @@ export function FinancialProviderForm({ provider, onSuccess, onCancel }: Financi
       onSuccess()
     } catch (error) {
       console.error("Error saving financial provider:", error)
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to save financial provider. Please try again."
-      setError(errorMessage)
       toast({
         title: "Error",
-        description: errorMessage,
+        description: `Failed to ${provider ? "update" : "create"} financial provider`,
         variant: "destructive",
       })
     } finally {
@@ -125,137 +103,89 @@ export function FinancialProviderForm({ provider, onSuccess, onCancel }: Financi
     }
   }
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-    // Clear error when user starts typing
-    if (error) setError(null)
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  if (catalogsLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading form...
+        </div>
+      </div>
+    )
   }
 
   return (
-    <Card className="w-full border-0 shadow-none">
-      <CardHeader className="px-0">
-        <CardTitle>{provider ? "Edit Financial Provider" : "Create Financial Provider"}</CardTitle>
-        <CardDescription>
-          {provider
-            ? "Update the financial provider information."
-            : "Add a new financial provider to the system. Select the appropriate catalog and provide the provider details."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="px-0">
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Financial Provider Catalog Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="catalog">Financial Provider Catalog *</Label>
-            {loadingCatalogs ? (
-              <div className="flex items-center space-x-2 p-3 border rounded-md">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Loading catalogs...</span>
-              </div>
-            ) : catalogs.length === 0 ? (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  No financial provider catalogs found. Please create a catalog first.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <Select
-                value={formData.catalogId}
-                onValueChange={(value) => handleInputChange("catalogId", value)}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a financial provider catalog" />
-                </SelectTrigger>
-                <SelectContent>
-                  {catalogs.map((catalog) => (
-                    <SelectItem key={catalog.id} value={catalog.id.toString()}>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{catalog.name}</span>
-                        <span className="text-xs text-muted-foreground">ID: {catalog.id}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          {/* Provider Code */}
-          <div className="space-y-2">
-            <Label htmlFor="code">Provider Code *</Label>
-            <Input
-              id="code"
-              value={formData.code}
-              onChange={(e) => handleInputChange("code", e.target.value)}
-              placeholder="e.g., BANK001, CREDIT001"
-              required
-              disabled={loading || !!provider} // Disable code editing when updating
-            />
-            <p className="text-xs text-muted-foreground">
-              {provider ? "Code cannot be changed when editing" : "Unique identifier for the financial provider"}
-            </p>
-          </div>
-
-          {/* Provider Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Provider Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
-              placeholder="e.g., Chase Bank, American Express"
-              required
-              disabled={loading}
-            />
-            <p className="text-xs text-muted-foreground">Display name for the financial provider</p>
-          </div>
-
-          {/* Form Actions */}
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
-            <Button type="submit" disabled={loading || loadingCatalogs || catalogs.length === 0} className="flex-1">
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {provider ? "Updating..." : "Creating..."}
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  {provider ? "Update Provider" : "Create Provider"}
-                </>
-              )}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={loading}
-              className="flex-1 bg-transparent"
-            >
-              <X className="mr-2 h-4 w-4" />
-              Cancel
-            </Button>
-          </div>
-        </form>
-
-        {/* Help Text */}
-        <div className="mt-6 p-4 bg-muted rounded-lg">
-          <h4 className="text-sm font-medium mb-2">Need Help?</h4>
-          <ul className="text-xs text-muted-foreground space-y-1">
-            <li>• Financial Provider Catalog: Groups related financial providers together</li>
-            <li>• Provider Code: Should be unique and descriptive (e.g., CHASE_BANK)</li>
-            <li>• Provider Name: User-friendly name that will be displayed in the interface</li>
-          </ul>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="code">Code</Label>
+          <Input
+            id="code"
+            value={formData.code}
+            onChange={(e) => handleInputChange("code", e.target.value)}
+            placeholder="Enter provider code"
+            required
+            disabled={!!provider} // Disable code editing when updating
+          />
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            value={formData.name}
+            onChange={(e) => handleInputChange("name", e.target.value)}
+            placeholder="Enter provider name"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="catalog">Financial Provider Catalog</Label>
+        <Select
+          value={formData.financialProviderCatalogId}
+          onValueChange={(value) => handleInputChange("financialProviderCatalogId", value)}
+          required
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select a financial provider catalog" />
+          </SelectTrigger>
+          <SelectContent>
+            {catalogs.map((catalog) => (
+              <SelectItem key={catalog.code} value={catalog.code}>
+                {catalog.name} ({catalog.code})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="active"
+          checked={formData.active}
+          onCheckedChange={(checked) => handleInputChange("active", checked)}
+        />
+        <Label htmlFor="active">Active</Label>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-2 pt-4">
+        <Button type="submit" disabled={loading} className="flex-1">
+          {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {provider ? "Update Provider" : "Create Provider"}
+        </Button>
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 bg-transparent">
+          Cancel
+        </Button>
+      </div>
+    </form>
   )
 }

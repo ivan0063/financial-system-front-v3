@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
@@ -15,28 +15,28 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
+import { Edit, Trash2, CreditCard, Calendar, DollarSign } from "lucide-react"
 import type { DebtAccount } from "@/domain/entities/debt-account"
-import { CreditCard, Calendar, DollarSign, Trash2, Building2, MoreVertical, Loader2 } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import { useToast } from "@/hooks/use-toast"
 
 interface DebtAccountListProps {
   debtAccounts: DebtAccount[]
   onAccountDeleted: () => void
+  onAccountEdit?: (account: DebtAccount) => void
 }
 
-export function DebtAccountList({ debtAccounts, onAccountDeleted }: DebtAccountListProps) {
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+export function DebtAccountList({ debtAccounts, onAccountDeleted, onAccountEdit }: DebtAccountListProps) {
+  const [deletingAccount, setDeletingAccount] = useState<string | null>(null)
   const { toast } = useToast()
 
   const handleDelete = async (account: DebtAccount) => {
-    setDeletingId(account.code)
+    setDeletingAccount(account.code)
     try {
       await debtAccountRepository.delete(account.code)
       toast({
         title: "Success",
-        description: `Debt account "${account.name}" has been deleted`,
+        description: "Debt account deleted successfully",
       })
       onAccountDeleted()
     } catch (error) {
@@ -47,140 +47,112 @@ export function DebtAccountList({ debtAccounts, onAccountDeleted }: DebtAccountL
         variant: "destructive",
       })
     } finally {
-      setDeletingId(null)
+      setDeletingAccount(null)
     }
-  }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount)
-  }
-
-  const getStatementTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      MANUAL: "Manual",
-      MERCADO_PAGO: "Mercado Pago",
-      RAPPI: "Rappi",
-      UNIVERSAL: "Universal",
-    }
-    return labels[type] || type
   }
 
   if (debtAccounts.length === 0) {
-    return null
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center h-32 space-y-2">
+          <CreditCard className="h-8 w-8 text-muted-foreground" />
+          <p className="text-muted-foreground text-center">No debt accounts found</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Your Debt Accounts</h3>
-        <Badge variant="secondary" className="text-xs">
-          {debtAccounts.length} account{debtAccounts.length !== 1 ? "s" : ""}
-        </Badge>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
-        {debtAccounts.map((account) => (
-          <Card key={account.code} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <CreditCard className="h-5 w-5 text-primary flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <CardTitle className="text-base truncate">{account.name}</CardTitle>
-                    <CardDescription className="flex items-center gap-1 text-xs">
-                      <span className="truncate">{account.code}</span>
-                    </CardDescription>
-                  </div>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {debtAccounts.map((account) => (
+        <Card key={account.code} className="hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1 flex-1 min-w-0">
+                <CardTitle className="text-lg truncate">{account.name}</CardTitle>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs">
+                    {account.code}
+                  </Badge>
+                  <Badge variant={account.active ? "default" : "secondary"} className="text-xs">
+                    {account.active ? "Active" : "Inactive"}
+                  </Badge>
+                  <Badge variant="secondary" className="text-xs">
+                    {account.accountStatementType}
+                  </Badge>
                 </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Account
-                        </DropdownMenuItem>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Debt Account</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{account.name}"? This action cannot be undone and will also
-                            delete all associated debts.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(account)}
-                            disabled={deletingId === account.code}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            {deletingId === account.code ? (
-                              <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Deleting...
-                              </>
-                            ) : (
-                              "Delete"
-                            )}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1 text-muted-foreground">
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-3">
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />
-                    <span>Credit Limit</span>
-                  </div>
-                  <div className="font-medium">{formatCurrency(account.credit)}</div>
+                    Credit Limit:
+                  </span>
+                  <span className="font-medium">${account.credit.toLocaleString()}</span>
                 </div>
-
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1 text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    <span>Pay Day</span>
+                    Pay Day:
+                  </span>
+                  <span className="font-medium">{account.payDay}</span>
+                </div>
+                {account.financialProvider && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Provider:</span>
+                    <span className="font-medium text-xs truncate max-w-[120px]">{account.financialProvider.name}</span>
                   </div>
-                  <div className="font-medium">Day {account.payDay}</div>
-                </div>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-1 text-muted-foreground text-sm">
-                  <Building2 className="h-3 w-3" />
-                  <span>Financial Provider</span>
-                </div>
-                <div className="text-sm font-medium truncate">{account.financialProvider?.name || "Not specified"}</div>
-              </div>
+              <div className="flex gap-2">
+                {onAccountEdit && (
+                  <Button variant="outline" size="sm" onClick={() => onAccountEdit(account)} className="flex-1">
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                )}
 
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline" className="text-xs">
-                  {getStatementTypeLabel(account.accountStatementType)}
-                </Badge>
-                <Badge variant={account.active ? "default" : "secondary"} className="text-xs">
-                  {account.active ? "Active" : "Inactive"}
-                </Badge>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={deletingAccount === account.code}
+                      className="flex-1 bg-transparent"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      {deletingAccount === account.code ? "Deleting..." : "Delete"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Debt Account</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{account.name}"? This action cannot be undone and will also
+                        delete all associated debts.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDelete(account)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   )
 }

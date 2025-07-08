@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 import {
   RefreshCw,
   User,
@@ -15,6 +16,9 @@ import {
   AlertTriangle,
   Wifi,
   WifiOff,
+  ArrowUp,
+  ArrowDown,
+  Minus,
 } from "lucide-react"
 import { FinancialStatusService, type UserStatusDashboard } from "@/application/services/financial-status-service"
 import { DEFAULT_USER_EMAIL } from "@/infrastructure/api/api-client"
@@ -188,14 +192,15 @@ export function DashboardView() {
   const totalDebtBalance = userDebtAccounts.reduce((sum, account) => sum + (account.credit || 0), 0)
   const totalCreditLimit = userDebtAccounts.reduce((sum, account) => sum + account.credit, 0)
   const monthlyNetIncome = salary - monthlyDebtPaymentAmount - monthlyFixedExpensesAmount
+  const totalMonthlyExpenses = monthlyDebtPaymentAmount + monthlyFixedExpensesAmount
 
   return (
     <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Financial Status</h1>
-          <p className="text-muted-foreground">Your comprehensive financial overview</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Financial Dashboard</h1>
+          <p className="text-muted-foreground text-sm sm:text-base">Your comprehensive financial overview</p>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1">
@@ -209,87 +214,133 @@ export function DashboardView() {
         </div>
       </div>
 
-      {/* Financial Overview Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Salary</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+      {/* Financial Overview - Redesigned for Better Comparison */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Income vs Expenses Comparison */}
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Monthly Financial Overview
+            </CardTitle>
+            <CardDescription>Income vs Expenses breakdown</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${salary.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Monthly income</p>
+            <div className="grid gap-6 md:grid-cols-3">
+              {/* Income */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ArrowUp className="h-4 w-4 text-green-500" />
+                  <span className="text-sm font-medium text-green-700">Monthly Income</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Salary</span>
+                    <span className="font-bold text-2xl text-green-600">${salary.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Expenses */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ArrowDown className="h-4 w-4 text-red-500" />
+                  <span className="text-sm font-medium text-red-700">Monthly Expenses</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Debt Payments</span>
+                    <span className="font-medium text-red-600">${monthlyDebtPaymentAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Fixed Expenses</span>
+                    <span className="font-medium text-red-600">${monthlyFixedExpensesAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="border-t pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Total</span>
+                      <span className="font-bold text-xl text-red-600">${totalMonthlyExpenses.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Net Income */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Minus className="h-4 w-4 text-blue-500" />
+                  <span className="text-sm font-medium text-blue-700">Net Income</span>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Available</span>
+                    <span className={`font-bold text-2xl ${monthlyNetIncome >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      ${monthlyNetIncome.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">{monthlyNetIncome >= 0 ? "Surplus" : "Deficit"}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Visual Progress Bar */}
+            <div className="mt-6 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span>Expense Ratio</span>
+                <span>{((totalMonthlyExpenses / salary) * 100).toFixed(1)}% of income</span>
+              </div>
+              <Progress value={(totalMonthlyExpenses / salary) * 100} className="h-2" />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Debt: {((monthlyDebtPaymentAmount / salary) * 100).toFixed(1)}%</span>
+                <span>Fixed: {((monthlyFixedExpensesAmount / salary) * 100).toFixed(1)}%</span>
+                <span>Available: {((monthlyNetIncome / salary) * 100).toFixed(1)}%</span>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
+        {/* Savings Card */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Savings</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Savings</CardTitle>
             <PiggyBank className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">${savings.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Total savings</p>
+            <p className="text-xs text-muted-foreground">
+              {savings > 0 ? `${(savings / salary).toFixed(1)} months of salary` : "No savings"}
+            </p>
           </CardContent>
         </Card>
 
+        {/* Emergency Fund Status */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Debt Payments</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Emergency Fund</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">${monthlyDebtPaymentAmount.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Monthly debt obligations</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fixed Expenses</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">${monthlyFixedExpensesAmount.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Monthly fixed costs</p>
+            <div className="space-y-2">
+              <div className="text-2xl font-bold">
+                {savings >= totalMonthlyExpenses * 6 ? (
+                  <span className="text-green-600">✓ Covered</span>
+                ) : (
+                  <span className="text-yellow-600">Partial</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Target: ${(totalMonthlyExpenses * 6).toLocaleString()} (6 months expenses)
+              </p>
+              <Progress value={Math.min((savings / (totalMonthlyExpenses * 6)) * 100, 100)} className="h-1" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Net Income Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Monthly Financial Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Monthly Income</p>
-              <p className="text-2xl font-bold text-green-600">${salary.toLocaleString()}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Total Monthly Expenses</p>
-              <p className="text-2xl font-bold text-red-600">
-                ${(monthlyDebtPaymentAmount + monthlyFixedExpensesAmount).toLocaleString()}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Net Monthly Income</p>
-              <p className={`text-2xl font-bold ${monthlyNetIncome >= 0 ? "text-green-600" : "text-red-600"}`}>
-                ${monthlyNetIncome.toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Debt Accounts Overview */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle className="flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
               Debt Accounts ({userDebtAccounts.length})
@@ -319,15 +370,18 @@ export function DashboardView() {
             <div className="space-y-3">
               {userDebtAccounts.slice(0, 3).map((account) => (
                 <div key={account.code} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{account.name}</p>
-                      <Badge variant={account.active ? "default" : "secondary"}>
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium truncate">{account.name}</p>
+                      <Badge variant={account.active ? "default" : "secondary"} className="text-xs">
                         {account.active ? "Active" : "Inactive"}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {account.accountStatementType}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {account.accountStatementType} • Pay Day: {account.payDay}
+                      {account.financialProvider?.name || "No Provider"} • Pay Day: {account.payDay}
                     </p>
                   </div>
                   <div className="text-right space-y-1">
@@ -365,13 +419,28 @@ export function DashboardView() {
                   key={`${debt.code}-${index}`}
                   className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50"
                 >
-                  <div className="space-y-1">
-                    <p className="font-medium">{debt.description}</p>
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium truncate">{debt.description}</p>
+                      {debt.code && (
+                        <Badge variant="outline" className="text-xs">
+                          {debt.code}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {debt.currentInstallment} of {debt.maxFinancingTerm} installments
                     </p>
+                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                      <div
+                        className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(debt.currentInstallment / debt.maxFinancingTerm) * 100}%`,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right ml-4">
                     <p className="font-medium text-yellow-700">${debt.monthlyPayment.toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">monthly payment</p>
                   </div>
@@ -385,7 +454,7 @@ export function DashboardView() {
       {/* Fixed Expenses */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
               Fixed Expenses ({userFixedExpenses.length})
@@ -399,8 +468,8 @@ export function DashboardView() {
           <div className="space-y-3">
             {userFixedExpenses.slice(0, 5).map((expense) => (
               <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-1">
-                  <p className="font-medium">{expense.name}</p>
+                <div className="space-y-1 flex-1 min-w-0">
+                  <p className="font-medium truncate">{expense.name}</p>
                   <p className="text-sm text-muted-foreground">
                     {expense.fixedExpenseCatalog.name} • Pay Day: {expense.paymentDay}
                   </p>

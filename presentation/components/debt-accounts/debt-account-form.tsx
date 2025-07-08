@@ -6,13 +6,14 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import { financialProviderRepository } from "@/infrastructure/repositories/api-financial-provider-repository"
 import type { DebtAccount } from "@/domain/entities/debt-account"
 import type { FinancialProvider } from "@/domain/entities/financial-provider"
-import { Save, X, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Loader2 } from "lucide-react"
 
 interface DebtAccountFormProps {
   account?: DebtAccount | null
@@ -26,19 +27,19 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
     name: "",
     payDay: 1,
     credit: 0,
-    accountStatementType: "MANUAL" as "MERCADO_PAGO" | "RAPPI" | "UNIVERSAL" | "MANUAL",
+    accountStatementType: "UNIVERSAL" as "UNIVERSAL" | "BANCOLOMBIA" | "DAVIVIENDA",
     financialProviderId: "",
+    active: true,
   })
   const [financialProviders, setFinancialProviders] = useState<FinancialProvider[]>([])
   const [loading, setLoading] = useState(false)
-  const [loadingProviders, setLoadingProviders] = useState(true)
+  const [providersLoading, setProvidersLoading] = useState(true)
   const { toast } = useToast()
 
   useEffect(() => {
     loadFinancialProviders()
   }, [])
 
-  // Populate form when editing
   useEffect(() => {
     if (account) {
       setFormData({
@@ -48,15 +49,7 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
         credit: account.credit,
         accountStatementType: account.accountStatementType,
         financialProviderId: account.financialProvider?.code || "",
-      })
-    } else {
-      setFormData({
-        code: "",
-        name: "",
-        payDay: 1,
-        credit: 0,
-        accountStatementType: "MANUAL",
-        financialProviderId: "",
+        active: account.active,
       })
     }
   }, [account])
@@ -64,31 +57,23 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
   const loadFinancialProviders = async () => {
     try {
       const providers = await financialProviderRepository.findAll()
-      setFinancialProviders(providers)
+      setFinancialProviders(providers.filter((p) => p.active))
     } catch (error) {
       console.error("Error loading financial providers:", error)
       toast({
-        title: "Warning",
-        description: "Could not load financial providers",
+        title: "Error",
+        description: "Failed to load financial providers",
         variant: "destructive",
       })
     } finally {
-      setLoadingProviders(false)
+      setProvidersLoading(false)
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.code || !formData.name || !formData.financialProviderId) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      })
-      return
-    }
-
     setLoading(true)
+
     try {
       const accountData = {
         code: formData.code,
@@ -96,12 +81,12 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
         payDay: formData.payDay,
         credit: formData.credit,
         accountStatementType: formData.accountStatementType,
-        financialProvider: `/jpa/financialProvider/${formData.financialProviderId}`, // URI format for Spring Data REST
-        active: true,
+        financialProvider: `/jpa/financialProvider/${formData.financialProviderId}`,
+        active: formData.active,
       }
 
       if (account) {
-        await debtAccountRepository.update(accountData)
+        await debtAccountRepository.update(account.code, accountData)
         toast({
           title: "Success",
           description: "Debt account updated successfully",
@@ -113,12 +98,13 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
           description: "Debt account created successfully",
         })
       }
+
       onSuccess()
     } catch (error) {
       console.error("Error saving debt account:", error)
       toast({
         title: "Error",
-        description: "Failed to save debt account",
+        description: `Failed to ${account ? "update" : "create"} debt account`,
         variant: "destructive",
       })
     } finally {
@@ -126,34 +112,52 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
     }
   }
 
+  const handleInputChange = (field: string, value: string | number | boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  if (providersLoading) {
+    return (
+      <div className="flex items-center justify-center h-32">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading form...
+        </div>
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="code">Account Code *</Label>
+          <Label htmlFor="code">Code</Label>
           <Input
             id="code"
             value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-            placeholder="e.g., VISA-001"
+            onChange={(e) => handleInputChange("code", e.target.value)}
+            placeholder="Enter account code"
             required
-            disabled={loading || !!account} // Disable code editing when updating
+            disabled={!!account} // Disable code editing when updating
           />
-          {account && <p className="text-xs text-muted-foreground">Code cannot be changed when editing</p>}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="name">Account Name *</Label>
+          <Label htmlFor="name">Name</Label>
           <Input
             id="name"
             value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="e.g., Main Credit Card"
+            onChange={(e) => handleInputChange("name", e.target.value)}
+            placeholder="Enter account name"
             required
-            disabled={loading}
           />
         </div>
+      </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="payDay">Pay Day</Label>
           <Input
@@ -162,8 +166,9 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
             min="1"
             max="31"
             value={formData.payDay}
-            onChange={(e) => setFormData({ ...formData, payDay: Number.parseInt(e.target.value) || 1 })}
-            disabled={loading}
+            onChange={(e) => handleInputChange("payDay", Number.parseInt(e.target.value))}
+            placeholder="Enter pay day (1-31)"
+            required
           />
         </div>
 
@@ -172,48 +177,49 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
           <Input
             id="credit"
             type="number"
-            step="0.01"
             min="0"
+            step="0.01"
             value={formData.credit}
-            onChange={(e) => setFormData({ ...formData, credit: Number.parseFloat(e.target.value) || 0 })}
-            placeholder="0.00"
-            disabled={loading}
+            onChange={(e) => handleInputChange("credit", Number.parseFloat(e.target.value))}
+            placeholder="Enter credit limit"
+            required
           />
         </div>
+      </div>
 
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="statementType">Statement Type</Label>
           <Select
             value={formData.accountStatementType}
-            onValueChange={(value: any) => setFormData({ ...formData, accountStatementType: value })}
-            disabled={loading}
+            onValueChange={(value) => handleInputChange("accountStatementType", value)}
+            required
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Select statement type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="MANUAL">Manual</SelectItem>
-              <SelectItem value="MERCADO_PAGO">Mercado Pago</SelectItem>
-              <SelectItem value="RAPPI">Rappi</SelectItem>
               <SelectItem value="UNIVERSAL">Universal</SelectItem>
+              <SelectItem value="BANCOLOMBIA">Bancolombia</SelectItem>
+              <SelectItem value="DAVIVIENDA">Davivienda</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="financialProvider">Financial Provider *</Label>
+          <Label htmlFor="financialProvider">Financial Provider</Label>
           <Select
             value={formData.financialProviderId}
-            onValueChange={(value) => setFormData({ ...formData, financialProviderId: value })}
-            disabled={loading || loadingProviders}
+            onValueChange={(value) => handleInputChange("financialProviderId", value)}
+            required
           >
             <SelectTrigger>
-              <SelectValue placeholder={loadingProviders ? "Loading..." : "Select a provider"} />
+              <SelectValue placeholder="Select financial provider" />
             </SelectTrigger>
             <SelectContent>
               {financialProviders.map((provider) => (
                 <SelectItem key={provider.code} value={provider.code}>
-                  {provider.name}
+                  {provider.name} ({provider.code})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -221,22 +227,21 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
         </div>
       </div>
 
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="active"
+          checked={formData.active}
+          onCheckedChange={(checked) => handleInputChange("active", checked)}
+        />
+        <Label htmlFor="active">Active</Label>
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-2 pt-4">
-        <Button type="submit" disabled={loading || loadingProviders} className="flex-1 sm:flex-none">
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              {account ? "Updating..." : "Creating..."}
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              {account ? "Update Account" : "Create Account"}
-            </>
-          )}
+        <Button type="submit" disabled={loading} className="flex-1">
+          {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {account ? "Update Account" : "Create Account"}
         </Button>
-        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 sm:flex-none bg-transparent">
-          <X className="h-4 w-4 mr-2" />
+        <Button type="button" variant="outline" onClick={onCancel} className="flex-1 bg-transparent">
           Cancel
         </Button>
       </div>

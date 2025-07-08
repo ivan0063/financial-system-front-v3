@@ -16,6 +16,7 @@ export function DebtAccountsView() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [editingAccount, setEditingAccount] = useState<DebtAccount | null>(null)
 
   useEffect(() => {
     loadDebtAccounts()
@@ -34,11 +35,22 @@ export function DebtAccountsView() {
 
   const handleAccountCreated = () => {
     setShowForm(false)
+    setEditingAccount(null)
     loadDebtAccounts()
   }
 
   const handleAccountDeleted = () => {
     loadDebtAccounts()
+  }
+
+  const handleAccountEdit = (account: DebtAccount) => {
+    setEditingAccount(account)
+    setShowForm(true)
+  }
+
+  const handleCancelForm = () => {
+    setShowForm(false)
+    setEditingAccount(null)
   }
 
   const handleStatementUploaded = () => {
@@ -104,16 +116,24 @@ export function DebtAccountsView() {
         {showForm && (
           <Card className="mb-6 sm:mb-8">
             <CardHeader>
-              <CardTitle className="text-lg sm:text-xl">Create New Debt Account</CardTitle>
-              <CardDescription>Add a new debt account to track your debts</CardDescription>
+              <CardTitle className="text-lg sm:text-xl">
+                {editingAccount ? "Edit Debt Account" : "Create New Debt Account"}
+              </CardTitle>
+              <CardDescription>
+                {editingAccount ? "Update the debt account information" : "Add a new debt account to track your debts"}
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <DebtAccountForm onSuccess={handleAccountCreated} onCancel={() => setShowForm(false)} />
+              <DebtAccountForm account={editingAccount} onSuccess={handleAccountCreated} onCancel={handleCancelForm} />
             </CardContent>
           </Card>
         )}
 
-        <DebtAccountList debtAccounts={debtAccounts} onAccountDeleted={handleAccountDeleted} />
+        <DebtAccountList
+          debtAccounts={debtAccounts}
+          onAccountDeleted={handleAccountDeleted}
+          onAccountEdit={handleAccountEdit}
+        />
 
         <StatementUploadModal
           isOpen={showUploadModal}
