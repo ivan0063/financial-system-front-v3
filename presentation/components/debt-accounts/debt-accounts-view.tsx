@@ -9,7 +9,7 @@ import { DebtAccountList } from "./debt-account-list"
 import { StatementUpload } from "../debts/statement-upload"
 import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import type { DebtAccount } from "@/domain/entities/debt-account"
-import { Plus, Upload } from 'lucide-react'
+import { Plus, Upload } from "lucide-react"
 
 export function DebtAccountsView() {
   const [debtAccounts, setDebtAccounts] = useState<DebtAccount[]>([])
@@ -34,6 +34,10 @@ export function DebtAccountsView() {
 
   const handleAccountCreated = () => {
     setShowForm(false)
+    loadDebtAccounts()
+  }
+
+  const handleAccountDeleted = () => {
     loadDebtAccounts()
   }
 
@@ -66,7 +70,7 @@ export function DebtAccountsView() {
             <p className="text-muted-foreground">Manage your debt accounts and credit cards</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowUpload(true)}>
+            <Button variant="outline" onClick={() => setShowUpload(true)} disabled={debtAccounts.length === 0}>
               <Upload className="h-4 w-4 mr-2" />
               Upload Statement
             </Button>
@@ -76,6 +80,20 @@ export function DebtAccountsView() {
             </Button>
           </div>
         </div>
+
+        {debtAccounts.length === 0 && !showForm && (
+          <Card className="mb-8">
+            <CardContent className="flex flex-col items-center justify-center h-32 space-y-2">
+              <p className="text-muted-foreground text-center">
+                No debt accounts found. Create your first debt account to get started.
+              </p>
+              <Button onClick={() => setShowForm(true)} variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Account
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {showForm && (
           <Card className="mb-8">
@@ -105,7 +123,7 @@ export function DebtAccountsView() {
           </Card>
         )}
 
-        <DebtAccountList />
+        <DebtAccountList debtAccounts={debtAccounts} onAccountDeleted={handleAccountDeleted} />
       </div>
     </div>
   )
