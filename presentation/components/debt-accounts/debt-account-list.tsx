@@ -1,238 +1,181 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Skeleton } from "@/components/ui/skeleton"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
+import type { DebtAccount } from "@/domain/entities/debt-account"
+import { CreditCard, Calendar, DollarSign, Trash2, Building2, MoreVertical, Loader2 } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
-import { CreditCard, Calendar, DollarSign, CheckCircle, AlertTriangle, Loader2 } from "lucide-react"
-import { debtAccountRepository } from "../../../infrastructure/repositories/api-debt-account-repository"
-import { debtManagementService } from "../../../application/services/debt-management-service"
-import type { DebtAccount } from "../../../domain/entities/debt-account"
 
-export function DebtAccountList() {
-  const [debtAccounts, setDebtAccounts] = useState<DebtAccount[]>([])
-  const [loading, setLoading] = useState(true)
-  const [payingOff, setPayingOff] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+interface DebtAccountListProps {
+  debtAccounts: DebtAccount[]
+  onAccountDeleted: () => void
+}
+
+export function DebtAccountList({ debtAccounts, onAccountDeleted }: DebtAccountListProps) {
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const { toast } = useToast()
 
-  useEffect(() => {
-    fetchDebtAccounts()
-  }, [])
-
-  const fetchDebtAccounts = async () => {
+  const handleDelete = async (account: DebtAccount) => {
+    setDeletingId(account.code)
     try {
-      setLoading(true)
-      setError(null)
-      const accounts = await debtAccountRepository.findAll()
-      setDebtAccounts(accounts)
-    } catch (err) {
-      console.error("Error fetching debt accounts:", err)
-      setError("Failed to load debt accounts. Please try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handlePayOff = async (debtAccountCode: string) => {
-    try {
-      setPayingOff(debtAccountCode)
-
-      const paidOffDebts = await debtManagementService.payOffDebts(debtAccountCode)
-
+      await debtAccountRepository.delete(account.code)
       toast({
-        title: "Debts Paid Off Successfully",
-        description: `${paidOffDebts.length} debt(s) have been marked as paid off for account ${debtAccountCode}.`,
-        variant: "default",
+        title: "Success",
+        description: `Debt account "${account.name}" has been deleted`,
       })
-
-      // Refresh the debt accounts list
-      await fetchDebtAccounts()
-    } catch (err) {
-      console.error("Error paying off debts:", err)
+      onAccountDeleted()
+    } catch (error) {
+      console.error("Error deleting debt account:", error)
       toast({
-        title: "Payment Failed",
-        description: "Failed to pay off debts. Please try again.",
+        title: "Error",
+        description: "Failed to delete debt account",
         variant: "destructive",
       })
     } finally {
-      setPayingOff(null)
+      setDeletingId(null)
     }
   }
 
-  const getAccountTypeColor = (type: string) => {
-    switch (type) {
-      case "MERCADO_PAGO":
-        return "bg-blue-100 text-blue-800"
-      case "RAPPI":
-        return "bg-orange-100 text-orange-800"
-      case "UNIVERSAL":
-        return "bg-green-100 text-green-800"
-      case "MANUAL":
-        return "bg-gray-100 text-gray-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount)
+  }
+
+  const getStatementTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      MANUAL: "Manual",
+      MERCADO_PAGO: "Mercado Pago",
+      RAPPI: "Rappi",
+      UNIVERSAL: "Universal",
     }
+    return labels[type] || type
   }
 
-  if (loading) {
-    return <DebtAccountListSkeleton />
-  }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-        <Button onClick={fetchDebtAccounts} className="mt-4 bg-transparent" variant="outline">
-          Try Again
-        </Button>
-      </div>
-    )
+  if (debtAccounts.length === 0) {
+    return null
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Debt Accounts</h2>
-          <p className="text-muted-foreground">Manage your debt accounts and payments</p>
-        </div>
-        <Button onClick={fetchDebtAccounts} variant="outline">
-          Refresh
-        </Button>
+        <h3 className="text-lg font-medium">Your Debt Accounts</h3>
+        <Badge variant="secondary" className="text-xs">
+          {debtAccounts.length} account{debtAccounts.length !== 1 ? "s" : ""}
+        </Badge>
       </div>
 
-      {debtAccounts.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Debt Accounts Found</h3>
-            <p className="text-muted-foreground text-center">
-              You don't have any debt accounts yet. Create one to start managing your debts.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {debtAccounts.map((account) => (
-            <Card key={account.code} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{account.name}</CardTitle>
-                  <Badge variant="secondary" className={getAccountTypeColor(account.accountStatementType)}>
-                    {account.accountStatementType.replace("_", " ")}
-                  </Badge>
-                </div>
-                <CardDescription>Account Code: {account.code}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Credit Limit</p>
-                      <p className="font-semibold">${account.credit.toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Pay Day</p>
-                      <p className="font-semibold">Day {account.payDay}</p>
-                    </div>
+      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3">
+        {debtAccounts.map((account) => (
+          <Card key={account.code} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <CreditCard className="h-5 w-5 text-primary flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="text-base truncate">{account.name}</CardTitle>
+                    <CardDescription className="flex items-center gap-1 text-xs">
+                      <span className="truncate">{account.code}</span>
+                    </CardDescription>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <div className="flex items-center space-x-2">
-                    {account.active ? (
-                      <>
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm text-green-600">Active</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                        <span className="text-sm text-red-600">Inactive</span>
-                      </>
-                    )}
-                  </div>
-
-                  <Button
-                    onClick={() => handlePayOff(account.code)}
-                    disabled={payingOff === account.code || !account.active}
-                    size="sm"
-                    variant="outline"
-                  >
-                    {payingOff === account.code ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Paying Off...
-                      </>
-                    ) : (
-                      "Pay Off Debts"
-                    )}
-                  </Button>
-                </div>
-
-                <div className="text-xs text-muted-foreground">
-                  <p>Created: {new Date(account.createdAt).toLocaleDateString()}</p>
-                  <p>Updated: {new Date(account.updatedAt).toLocaleDateString()}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function DebtAccountListSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64" />
-        </div>
-        <Skeleton className="h-10 w-20" />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-5 w-20" />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Account
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Debt Account</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{account.name}"? This action cannot be undone and will also
+                            delete all associated debts.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(account)}
+                            disabled={deletingId === account.code}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {deletingId === account.code ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Deleting...
+                              </>
+                            ) : (
+                              "Delete"
+                            )}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <Skeleton className="h-4 w-28" />
             </CardHeader>
+
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-20" />
-                  <Skeleton className="h-5 w-16" />
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <DollarSign className="h-3 w-3" />
+                    <span>Credit Limit</span>
+                  </div>
+                  <div className="font-medium">{formatCurrency(account.credit)}</div>
                 </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-5 w-12" />
+
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Calendar className="h-3 w-3" />
+                    <span>Pay Day</span>
+                  </div>
+                  <div className="font-medium">Day {account.payDay}</div>
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-4 border-t">
-                <Skeleton className="h-4 w-16" />
-                <Skeleton className="h-8 w-24" />
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                  <Building2 className="h-3 w-3" />
+                  <span>Financial Provider</span>
+                </div>
+                <div className="text-sm font-medium truncate">{account.financialProvider?.name || "Not specified"}</div>
               </div>
-              <div className="space-y-1">
-                <Skeleton className="h-3 w-32" />
-                <Skeleton className="h-3 w-32" />
+
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {getStatementTypeLabel(account.accountStatementType)}
+                </Badge>
+                <Badge variant={account.active ? "default" : "secondary"} className="text-xs">
+                  {account.active ? "Active" : "Inactive"}
+                </Badge>
               </div>
             </CardContent>
           </Card>

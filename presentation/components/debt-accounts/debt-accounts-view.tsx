@@ -6,16 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Header } from "../layout/header"
 import { DebtAccountForm } from "./debt-account-form"
 import { DebtAccountList } from "./debt-account-list"
-import { StatementUpload } from "../debts/statement-upload"
+import { StatementUploadModal } from "../debts/statement-upload-modal"
 import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import type { DebtAccount } from "@/domain/entities/debt-account"
-import { Plus, Upload } from "lucide-react"
+import { Plus, Upload, Loader2 } from "lucide-react"
 
 export function DebtAccountsView() {
   const [debtAccounts, setDebtAccounts] = useState<DebtAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [showUpload, setShowUpload] = useState(false)
+  const [showUploadModal, setShowUploadModal] = useState(false)
 
   useEffect(() => {
     loadDebtAccounts()
@@ -42,8 +42,6 @@ export function DebtAccountsView() {
   }
 
   const handleStatementUploaded = () => {
-    setShowUpload(false)
-    // Refresh debt accounts after statement upload
     loadDebtAccounts()
   }
 
@@ -53,7 +51,10 @@ export function DebtAccountsView() {
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
-            <div className="text-lg">Loading debt accounts...</div>
+            <div className="flex items-center gap-2 text-lg">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Loading debt accounts...
+            </div>
           </div>
         </div>
       </div>
@@ -63,18 +64,23 @@ export function DebtAccountsView() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Debt Accounts</h2>
-            <p className="text-muted-foreground">Manage your debt accounts and credit cards</p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Debt Accounts</h2>
+            <p className="text-muted-foreground text-sm sm:text-base">Manage your debt accounts and credit cards</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setShowUpload(true)} disabled={debtAccounts.length === 0}>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowUploadModal(true)}
+              disabled={debtAccounts.length === 0}
+              className="flex-1 sm:flex-none"
+            >
               <Upload className="h-4 w-4 mr-2" />
               Upload Statement
             </Button>
-            <Button onClick={() => setShowForm(true)}>
+            <Button onClick={() => setShowForm(true)} className="flex-1 sm:flex-none">
               <Plus className="h-4 w-4 mr-2" />
               Add Account
             </Button>
@@ -82,12 +88,12 @@ export function DebtAccountsView() {
         </div>
 
         {debtAccounts.length === 0 && !showForm && (
-          <Card className="mb-8">
-            <CardContent className="flex flex-col items-center justify-center h-32 space-y-2">
-              <p className="text-muted-foreground text-center">
+          <Card className="mb-6 sm:mb-8">
+            <CardContent className="flex flex-col items-center justify-center h-32 space-y-3 text-center">
+              <p className="text-muted-foreground">
                 No debt accounts found. Create your first debt account to get started.
               </p>
-              <Button onClick={() => setShowForm(true)} variant="outline">
+              <Button onClick={() => setShowForm(true)} variant="outline" size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Account
               </Button>
@@ -96,9 +102,9 @@ export function DebtAccountsView() {
         )}
 
         {showForm && (
-          <Card className="mb-8">
+          <Card className="mb-6 sm:mb-8">
             <CardHeader>
-              <CardTitle>Create New Debt Account</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Create New Debt Account</CardTitle>
               <CardDescription>Add a new debt account to track your debts</CardDescription>
             </CardHeader>
             <CardContent>
@@ -107,23 +113,14 @@ export function DebtAccountsView() {
           </Card>
         )}
 
-        {showUpload && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Upload Account Statement</CardTitle>
-              <CardDescription>Upload a statement to automatically extract debts</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <StatementUpload
-                debtAccounts={debtAccounts}
-                onSuccess={handleStatementUploaded}
-                onCancel={() => setShowUpload(false)}
-              />
-            </CardContent>
-          </Card>
-        )}
-
         <DebtAccountList debtAccounts={debtAccounts} onAccountDeleted={handleAccountDeleted} />
+
+        <StatementUploadModal
+          isOpen={showUploadModal}
+          onClose={() => setShowUploadModal(false)}
+          debtAccounts={debtAccounts}
+          onSuccess={handleStatementUploaded}
+        />
       </div>
     </div>
   )
