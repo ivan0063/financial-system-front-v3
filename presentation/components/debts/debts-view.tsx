@@ -7,28 +7,24 @@ import { Header } from "../layout/header"
 import { DebtForm } from "./debt-form"
 import { DebtList } from "./debt-list"
 import { debtRepository } from "@/infrastructure/repositories/api-debt-repository"
-import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import type { Debt } from "@/domain/entities/debt"
-import type { DebtAccount } from "@/domain/entities/debt-account"
 import { Plus } from "lucide-react"
 
 export function DebtsView() {
   const [debts, setDebts] = useState<Debt[]>([])
-  const [debtAccounts, setDebtAccounts] = useState<DebtAccount[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
-    loadData()
+    loadDebts()
   }, [])
 
-  const loadData = async () => {
+  const loadDebts = async () => {
     try {
-      const [debtsData, accountsData] = await Promise.all([debtRepository.findAll(), debtAccountRepository.findAll()])
-      setDebts(debtsData)
-      setDebtAccounts(accountsData)
+      const allDebts = await debtRepository.findAll()
+      setDebts(allDebts)
     } catch (error) {
-      console.error("Error loading data:", error)
+      console.error("Error loading debts:", error)
     } finally {
       setLoading(false)
     }
@@ -36,11 +32,11 @@ export function DebtsView() {
 
   const handleDebtCreated = () => {
     setShowForm(false)
-    loadData()
+    loadDebts()
   }
 
   const handleDebtDeleted = () => {
-    loadData()
+    loadDebts()
   }
 
   if (loading) {
@@ -63,29 +59,27 @@ export function DebtsView() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Debts</h2>
-            <p className="text-muted-foreground">Manage individual debt items and payments</p>
+            <p className="text-muted-foreground">Track and manage your individual debts</p>
           </div>
-          <div className="flex space-x-2">
-            <Button onClick={() => setShowForm(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Debt
-            </Button>
-          </div>
+          <Button onClick={() => setShowForm(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Debt
+          </Button>
         </div>
 
         {showForm && (
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Create New Debt</CardTitle>
-              <CardDescription>Add a new debt item to track</CardDescription>
+              <CardDescription>Add a new debt to track</CardDescription>
             </CardHeader>
             <CardContent>
-              <DebtForm debtAccounts={debtAccounts} onSuccess={handleDebtCreated} onCancel={() => setShowForm(false)} />
+              <DebtForm onSuccess={handleDebtCreated} onCancel={() => setShowForm(false)} />
             </CardContent>
           </Card>
         )}
 
-        <DebtList debts={debts} debtAccounts={debtAccounts} onDebtDeleted={handleDebtDeleted} />
+        <DebtList debts={debts} onDebtDeleted={handleDebtDeleted} />
       </div>
     </div>
   )

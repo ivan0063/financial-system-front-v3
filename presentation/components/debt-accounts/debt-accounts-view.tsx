@@ -23,8 +23,8 @@ export function DebtAccountsView() {
 
   const loadDebtAccounts = async () => {
     try {
-      const data = await debtAccountRepository.findAll()
-      setDebtAccounts(data)
+      const accounts = await debtAccountRepository.findAll()
+      setDebtAccounts(accounts)
     } catch (error) {
       console.error("Error loading debt accounts:", error)
     } finally {
@@ -37,10 +37,13 @@ export function DebtAccountsView() {
     loadDebtAccounts()
   }
 
-  const handleDebtsExtracted = () => {
-    setShowUpload(false)
-    // Optionally refresh accounts if needed
+  const handleAccountDeleted = () => {
     loadDebtAccounts()
+  }
+
+  const handleStatementUploaded = () => {
+    setShowUpload(false)
+    // Optionally refresh data or show success message
   }
 
   if (loading) {
@@ -63,10 +66,10 @@ export function DebtAccountsView() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Debt Accounts</h2>
-            <p className="text-muted-foreground">Manage your debt accounts and upload statements</p>
+            <p className="text-muted-foreground">Manage your debt accounts and credit cards</p>
           </div>
-          <div className="flex space-x-2">
-            <Button onClick={() => setShowUpload(true)}>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowUpload(true)}>
               <Upload className="h-4 w-4 mr-2" />
               Upload Statement
             </Button>
@@ -81,7 +84,7 @@ export function DebtAccountsView() {
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Create New Debt Account</CardTitle>
-              <CardDescription>Add a new debt account to track</CardDescription>
+              <CardDescription>Add a new debt account to track your debts</CardDescription>
             </CardHeader>
             <CardContent>
               <DebtAccountForm onSuccess={handleAccountCreated} onCancel={() => setShowForm(false)} />
@@ -93,19 +96,15 @@ export function DebtAccountsView() {
           <Card className="mb-8">
             <CardHeader>
               <CardTitle>Upload Account Statement</CardTitle>
-              <CardDescription>Extract debts automatically from your account statement</CardDescription>
+              <CardDescription>Upload a statement to automatically extract debts</CardDescription>
             </CardHeader>
             <CardContent>
-              <StatementUpload
-                debtAccounts={debtAccounts}
-                onSuccess={handleDebtsExtracted}
-                onCancel={() => setShowUpload(false)}
-              />
+              <StatementUpload onSuccess={handleStatementUploaded} onCancel={() => setShowUpload(false)} />
             </CardContent>
           </Card>
         )}
 
-        <DebtAccountList />
+        <DebtAccountList debtAccounts={debtAccounts} onAccountDeleted={handleAccountDeleted} />
       </div>
     </div>
   )

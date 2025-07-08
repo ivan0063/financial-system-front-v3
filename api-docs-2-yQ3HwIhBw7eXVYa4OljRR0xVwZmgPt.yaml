@@ -1,0 +1,4403 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:666
+  description: Generated server url
+paths:
+  /jpa/debt:
+    get:
+      tags:
+      - debt-entity-entity-controller
+      description: get-debtentity
+      operationId: getCollectionResource-debtentity-get
+      parameters:
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelDebtEntity"
+            application/x-spring-data-compact+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelDebtEntity"
+            text/uri-list:
+              schema:
+                type: string
+    post:
+      tags:
+      - debt-entity-entity-controller
+      description: create-debtentity
+      operationId: postCollectionResource-debtentity-post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtEntityRequestBody"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtEntity"
+  /jpa/debt/search/findAllDebtsByDebtAccount_CodeAndActiveTrue:
+    get:
+      tags:
+      - debt-entity-search-controller
+      operationId: executeSearch-debtentity-get
+      parameters:
+      - name: debtAccountCode
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelEntityModelDebtEntity"
+        "404":
+          description: Not Found
+  /jpa/debt/{id}:
+    get:
+      tags:
+      - debt-entity-entity-controller
+      description: get-debtentity
+      operationId: getItemResource-debtentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtEntity"
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - debt-entity-entity-controller
+      description: update-debtentity
+      operationId: putItemResource-debtentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - debt-entity-entity-controller
+      description: delete-debtentity
+      operationId: deleteItemResource-debtentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - debt-entity-entity-controller
+      description: patch-debtentity
+      operationId: patchItemResource-debtentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtEntity"
+        "204":
+          description: No Content
+  /jpa/debt/{id}/debtAccount:
+    get:
+      tags:
+      - debt-entity-property-reference-controller
+      description: get-debtaccountentity-by-debtentity-Id
+      operationId: followPropertyReference-debtentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - debt-entity-property-reference-controller
+      description: update-debtaccountentity-by-debtentity-Id
+      operationId: createPropertyReference-debtentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - debt-entity-property-reference-controller
+      description: delete-debtaccountentity-by-debtentity-Id
+      operationId: deletePropertyReference-debtentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - debt-entity-property-reference-controller
+      description: patch-debtaccountentity-by-debtentity-Id
+      operationId: createPropertyReference-debtentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        "204":
+          description: No Content
+  /jpa/debt/{id}/debtAccount/{propertyId}:
+    get:
+      tags:
+      - debt-entity-property-reference-controller
+      description: get-debtaccountentity-by-debtentity-Id
+      operationId: followPropertyReference-debtentity-get_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - debt-entity-property-reference-controller
+      description: delete-debtaccountentity-by-debtentity-Id
+      operationId: deletePropertyReferenceId-debtentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/debtAccount:
+    get:
+      tags:
+      - debt-account-entity-entity-controller
+      description: get-debtaccountentity
+      operationId: getCollectionResource-debtaccountentity-get
+      parameters:
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelDebtAccountEntity"
+            application/x-spring-data-compact+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelDebtAccountEntity"
+            text/uri-list:
+              schema:
+                type: string
+    post:
+      tags:
+      - debt-account-entity-entity-controller
+      description: create-debtaccountentity
+      operationId: postCollectionResource-debtaccountentity-post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtAccountEntityRequestBody"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+  /jpa/debtAccount/search/findAllByFinancialProvider:
+    get:
+      tags:
+      - debt-account-entity-search-controller
+      operationId: executeSearch-debtaccountentity-get
+      parameters:
+      - name: financialProvider
+        in: query
+        schema:
+          $ref: "#/components/schemas/FinancialProviderEntity"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelEntityModelDebtAccountEntity"
+        "404":
+          description: Not Found
+  /jpa/debtAccount/search/findDebtAccountByCodeAndActiveTrue:
+    get:
+      tags:
+      - debt-account-entity-search-controller
+      operationId: executeSearch-debtaccountentity-get_1
+      parameters:
+      - name: code
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        "404":
+          description: Not Found
+  /jpa/debtAccount/{id}:
+    get:
+      tags:
+      - debt-account-entity-entity-controller
+      description: get-debtaccountentity
+      operationId: getItemResource-debtaccountentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - debt-account-entity-entity-controller
+      description: update-debtaccountentity
+      operationId: putItemResource-debtaccountentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtAccountEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - debt-account-entity-entity-controller
+      description: delete-debtaccountentity
+      operationId: deleteItemResource-debtaccountentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - debt-account-entity-entity-controller
+      description: patch-debtaccountentity
+      operationId: patchItemResource-debtaccountentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtAccountEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        "204":
+          description: No Content
+  /jpa/debtAccount/{id}/debt:
+    get:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: get-debtentity-by-debtaccountentity-Id
+      operationId: followPropertyReference-debtaccountentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: update-debtentity-by-debtaccountentity-Id
+      operationId: createPropertyReference-debtaccountentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: delete-debtentity-by-debtaccountentity-Id
+      operationId: deletePropertyReference-debtaccountentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: patch-debtentity-by-debtaccountentity-Id
+      operationId: createPropertyReference-debtaccountentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtEntity"
+        "204":
+          description: No Content
+  /jpa/debtAccount/{id}/debt/{propertyId}:
+    get:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: get-debtentity-by-debtaccountentity-Id
+      operationId: followPropertyReference-debtaccountentity-get_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: delete-debtentity-by-debtaccountentity-Id
+      operationId: deletePropertyReferenceId-debtaccountentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/debtAccount/{id}/financialProvider:
+    get:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: get-financialproviderentity-by-debtaccountentity-Id
+      operationId: followPropertyReference-debtaccountentity-get_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: update-financialproviderentity-by-debtaccountentity-Id
+      operationId: createPropertyReference-debtaccountentity-put_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: delete-financialproviderentity-by-debtaccountentity-Id
+      operationId: deletePropertyReference-debtaccountentity-delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: patch-financialproviderentity-by-debtaccountentity-Id
+      operationId: createPropertyReference-debtaccountentity-patch_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        "204":
+          description: No Content
+  /jpa/debtAccount/{id}/financialProvider/{propertyId}:
+    get:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: get-financialproviderentity-by-debtaccountentity-Id
+      operationId: followPropertyReference-debtaccountentity-get_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - debt-account-entity-property-reference-controller
+      description: delete-financialproviderentity-by-debtaccountentity-Id
+      operationId: deletePropertyReferenceId-debtaccountentity-delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/financialProvider:
+    get:
+      tags:
+      - financial-provider-entity-entity-controller
+      description: get-financialproviderentity
+      operationId: getCollectionResource-financialproviderentity-get
+      parameters:
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelFinancialProviderEntity"
+            application/x-spring-data-compact+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelFinancialProviderEntity"
+            text/uri-list:
+              schema:
+                type: string
+    post:
+      tags:
+      - financial-provider-entity-entity-controller
+      description: create-financialproviderentity
+      operationId: postCollectionResource-financialproviderentity-post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialProviderEntityRequestBody"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+  /jpa/financialProvider/search/findAllByDebtSysUser:
+    get:
+      tags:
+      - financial-provider-entity-search-controller
+      operationId: executeSearch-financialproviderentity-get
+      parameters:
+      - name: debtSysUser
+        in: query
+        schema:
+          $ref: "#/components/schemas/DebtSysUserEntity"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelEntityModelFinancialProviderEntity"
+        "404":
+          description: Not Found
+  /jpa/financialProvider/{id}:
+    get:
+      tags:
+      - financial-provider-entity-entity-controller
+      description: get-financialproviderentity
+      operationId: getItemResource-financialproviderentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - financial-provider-entity-entity-controller
+      description: update-financialproviderentity
+      operationId: putItemResource-financialproviderentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialProviderEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - financial-provider-entity-entity-controller
+      description: delete-financialproviderentity
+      operationId: deleteItemResource-financialproviderentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - financial-provider-entity-entity-controller
+      description: patch-financialproviderentity
+      operationId: patchItemResource-financialproviderentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialProviderEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        "204":
+          description: No Content
+  /jpa/financialProvider/{id}/debtAccounts:
+    get:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: get-debtaccountentity-by-financialproviderentity-Id
+      operationId: followPropertyReference-financialproviderentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtAccountEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: update-debtaccountentity-by-financialproviderentity-Id
+      operationId: createPropertyReference-financialproviderentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtAccountEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtAccountEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: delete-debtaccountentity-by-financialproviderentity-Id
+      operationId: deletePropertyReference-financialproviderentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: patch-debtaccountentity-by-financialproviderentity-Id
+      operationId: createPropertyReference-financialproviderentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtAccountEntity"
+        "204":
+          description: No Content
+  /jpa/financialProvider/{id}/debtAccounts/{propertyId}:
+    get:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: get-debtaccountentity-by-financialproviderentity-Id
+      operationId: followPropertyReference-financialproviderentity-get_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelDebtAccountEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: delete-debtaccountentity-by-financialproviderentity-Id
+      operationId: deletePropertyReferenceId-financialproviderentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/financialProvider/{id}/debtSysUser:
+    get:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: get-debtsysuserentity-by-financialproviderentity-Id
+      operationId: followPropertyReference-financialproviderentity-get_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: update-debtsysuserentity-by-financialproviderentity-Id
+      operationId: createPropertyReference-financialproviderentity-put_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: delete-debtsysuserentity-by-financialproviderentity-Id
+      operationId: deletePropertyReference-financialproviderentity-delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: patch-debtsysuserentity-by-financialproviderentity-Id
+      operationId: createPropertyReference-financialproviderentity-patch_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "204":
+          description: No Content
+  /jpa/financialProvider/{id}/debtSysUser/{propertyId}:
+    get:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: get-debtsysuserentity-by-financialproviderentity-Id
+      operationId: followPropertyReference-financialproviderentity-get_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: delete-debtsysuserentity-by-financialproviderentity-Id
+      operationId: deletePropertyReferenceId-financialproviderentity-delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/financialProvider/{id}/financialProviderCatalog:
+    get:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: get-financialprovidercatalogentity-by-financialproviderentity-Id
+      operationId: followPropertyReference-financialproviderentity-get_4
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: update-financialprovidercatalogentity-by-financialproviderentity-Id
+      operationId: createPropertyReference-financialproviderentity-put_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: delete-financialprovidercatalogentity-by-financialproviderentity-Id
+      operationId: deletePropertyReference-financialproviderentity-delete_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: patch-financialprovidercatalogentity-by-financialproviderentity-Id
+      operationId: createPropertyReference-financialproviderentity-patch_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+        "204":
+          description: No Content
+  /jpa/financialProvider/{id}/financialProviderCatalog/{propertyId}:
+    get:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: get-financialprovidercatalogentity-by-financialproviderentity-Id
+      operationId: followPropertyReference-financialproviderentity-get_5
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - financial-provider-entity-property-reference-controller
+      description: delete-financialprovidercatalogentity-by-financialproviderentity-Id
+      operationId: deletePropertyReferenceId-financialproviderentity-delete_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/financialProviderCatalog:
+    get:
+      tags:
+      - financial-provider-catalog-entity-entity-controller
+      description: get-financialprovidercatalogentity
+      operationId: getCollectionResource-financialprovidercatalogentity-get
+      parameters:
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelFinancialProviderCatalogEntity"
+            application/x-spring-data-compact+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelFinancialProviderCatalogEntity"
+            text/uri-list:
+              schema:
+                type: string
+    post:
+      tags:
+      - financial-provider-catalog-entity-entity-controller
+      description: create-financialprovidercatalogentity
+      operationId: postCollectionResource-financialprovidercatalogentity-post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialProviderCatalogEntityRequestBody"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+  /jpa/financialProviderCatalog/{id}:
+    get:
+      tags:
+      - financial-provider-catalog-entity-entity-controller
+      description: get-financialprovidercatalogentity
+      operationId: getItemResource-financialprovidercatalogentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - financial-provider-catalog-entity-entity-controller
+      description: update-financialprovidercatalogentity
+      operationId: putItemResource-financialprovidercatalogentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialProviderCatalogEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - financial-provider-catalog-entity-entity-controller
+      description: delete-financialprovidercatalogentity
+      operationId: deleteItemResource-financialprovidercatalogentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - financial-provider-catalog-entity-entity-controller
+      description: patch-financialprovidercatalogentity
+      operationId: patchItemResource-financialprovidercatalogentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinancialProviderCatalogEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+        "204":
+          description: No Content
+  /jpa/financialProviderCatalog/{id}/financialProviders:
+    get:
+      tags:
+      - financial-provider-catalog-entity-property-reference-controller
+      description: get-financialproviderentity-by-financialprovidercatalogentity-Id
+      operationId: followPropertyReference-financialprovidercatalogentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - financial-provider-catalog-entity-property-reference-controller
+      description: update-financialproviderentity-by-financialprovidercatalogentity-Id
+      operationId: createPropertyReference-financialprovidercatalogentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - financial-provider-catalog-entity-property-reference-controller
+      description: delete-financialproviderentity-by-financialprovidercatalogentity-Id
+      operationId: deletePropertyReference-financialprovidercatalogentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - financial-provider-catalog-entity-property-reference-controller
+      description: patch-financialproviderentity-by-financialprovidercatalogentity-Id
+      operationId: createPropertyReference-financialprovidercatalogentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+        "204":
+          description: No Content
+  /jpa/financialProviderCatalog/{id}/financialProviders/{propertyId}:
+    get:
+      tags:
+      - financial-provider-catalog-entity-property-reference-controller
+      description: get-financialproviderentity-by-financialprovidercatalogentity-Id
+      operationId: followPropertyReference-financialprovidercatalogentity-get_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - financial-provider-catalog-entity-property-reference-controller
+      description: delete-financialproviderentity-by-financialprovidercatalogentity-Id
+      operationId: deletePropertyReferenceId-financialprovidercatalogentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/fixedExpense:
+    get:
+      tags:
+      - fixed-expense-entity-entity-controller
+      description: get-fixedexpenseentity
+      operationId: getCollectionResource-fixedexpenseentity-get
+      parameters:
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelFixedExpenseEntity"
+            application/x-spring-data-compact+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelFixedExpenseEntity"
+            text/uri-list:
+              schema:
+                type: string
+    post:
+      tags:
+      - fixed-expense-entity-entity-controller
+      description: create-fixedexpenseentity
+      operationId: postCollectionResource-fixedexpenseentity-post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixedExpenseEntityRequestBody"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseEntity"
+  /jpa/fixedExpense/search/findAllByDebtSysUserAndActiveTrue:
+    get:
+      tags:
+      - fixed-expense-entity-search-controller
+      operationId: executeSearch-fixedexpenseentity-get
+      parameters:
+      - name: user
+        in: query
+        schema:
+          $ref: "#/components/schemas/DebtSysUserEntity"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelEntityModelFixedExpenseEntity"
+        "404":
+          description: Not Found
+  /jpa/fixedExpense/{id}:
+    get:
+      tags:
+      - fixed-expense-entity-entity-controller
+      description: get-fixedexpenseentity
+      operationId: getItemResource-fixedexpenseentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseEntity"
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - fixed-expense-entity-entity-controller
+      description: update-fixedexpenseentity
+      operationId: putItemResource-fixedexpenseentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixedExpenseEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - fixed-expense-entity-entity-controller
+      description: delete-fixedexpenseentity
+      operationId: deleteItemResource-fixedexpenseentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - fixed-expense-entity-entity-controller
+      description: patch-fixedexpenseentity
+      operationId: patchItemResource-fixedexpenseentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixedExpenseEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseEntity"
+        "204":
+          description: No Content
+  /jpa/fixedExpense/{id}/debtSysUser:
+    get:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: get-debtsysuserentity-by-fixedexpenseentity-Id
+      operationId: followPropertyReference-fixedexpenseentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: update-debtsysuserentity-by-fixedexpenseentity-Id
+      operationId: createPropertyReference-fixedexpenseentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: delete-debtsysuserentity-by-fixedexpenseentity-Id
+      operationId: deletePropertyReference-fixedexpenseentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: patch-debtsysuserentity-by-fixedexpenseentity-Id
+      operationId: createPropertyReference-fixedexpenseentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "204":
+          description: No Content
+  /jpa/fixedExpense/{id}/debtSysUser/{propertyId}:
+    get:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: get-debtsysuserentity-by-fixedexpenseentity-Id
+      operationId: followPropertyReference-fixedexpenseentity-get_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: delete-debtsysuserentity-by-fixedexpenseentity-Id
+      operationId: deletePropertyReferenceId-fixedexpenseentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/fixedExpense/{id}/fixedExpenseCatalog:
+    get:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: get-fixedexpensecatalogentity-by-fixedexpenseentity-Id
+      operationId: followPropertyReference-fixedexpenseentity-get_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: update-fixedexpensecatalogentity-by-fixedexpenseentity-Id
+      operationId: createPropertyReference-fixedexpenseentity-put_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: delete-fixedexpensecatalogentity-by-fixedexpenseentity-Id
+      operationId: deletePropertyReference-fixedexpenseentity-delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: patch-fixedexpensecatalogentity-by-fixedexpenseentity-Id
+      operationId: createPropertyReference-fixedexpenseentity-patch_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+        "204":
+          description: No Content
+  /jpa/fixedExpense/{id}/fixedExpenseCatalog/{propertyId}:
+    get:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: get-fixedexpensecatalogentity-by-fixedexpenseentity-Id
+      operationId: followPropertyReference-fixedexpenseentity-get_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - fixed-expense-entity-property-reference-controller
+      description: delete-fixedexpensecatalogentity-by-fixedexpenseentity-Id
+      operationId: deletePropertyReferenceId-fixedexpenseentity-delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/fixedExpenseCatalog:
+    get:
+      tags:
+      - fixed-expense-catalog-entity-entity-controller
+      description: get-fixedexpensecatalogentity
+      operationId: getCollectionResource-fixedexpensecatalogentity-get
+      parameters:
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelFixedExpenseCatalogEntity"
+            application/x-spring-data-compact+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelFixedExpenseCatalogEntity"
+            text/uri-list:
+              schema:
+                type: string
+    post:
+      tags:
+      - fixed-expense-catalog-entity-entity-controller
+      description: create-fixedexpensecatalogentity
+      operationId: postCollectionResource-fixedexpensecatalogentity-post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixedExpenseCatalogEntityRequestBody"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+  /jpa/fixedExpenseCatalog/{id}:
+    get:
+      tags:
+      - fixed-expense-catalog-entity-entity-controller
+      description: get-fixedexpensecatalogentity
+      operationId: getItemResource-fixedexpensecatalogentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - fixed-expense-catalog-entity-entity-controller
+      description: update-fixedexpensecatalogentity
+      operationId: putItemResource-fixedexpensecatalogentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixedExpenseCatalogEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - fixed-expense-catalog-entity-entity-controller
+      description: delete-fixedexpensecatalogentity
+      operationId: deleteItemResource-fixedexpensecatalogentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - fixed-expense-catalog-entity-entity-controller
+      description: patch-fixedexpensecatalogentity
+      operationId: patchItemResource-fixedexpensecatalogentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FixedExpenseCatalogEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+        "204":
+          description: No Content
+  /jpa/fixedExpenseCatalog/{id}/fixedExpenses:
+    get:
+      tags:
+      - fixed-expense-catalog-entity-property-reference-controller
+      description: get-fixedexpenseentity-by-fixedexpensecatalogentity-Id
+      operationId: followPropertyReference-fixedexpensecatalogentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - fixed-expense-catalog-entity-property-reference-controller
+      description: update-fixedexpenseentity-by-fixedexpensecatalogentity-Id
+      operationId: createPropertyReference-fixedexpensecatalogentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - fixed-expense-catalog-entity-property-reference-controller
+      description: delete-fixedexpenseentity-by-fixedexpensecatalogentity-Id
+      operationId: deletePropertyReference-fixedexpensecatalogentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - fixed-expense-catalog-entity-property-reference-controller
+      description: patch-fixedexpenseentity-by-fixedexpensecatalogentity-Id
+      operationId: createPropertyReference-fixedexpensecatalogentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+        "204":
+          description: No Content
+  /jpa/fixedExpenseCatalog/{id}/fixedExpenses/{propertyId}:
+    get:
+      tags:
+      - fixed-expense-catalog-entity-property-reference-controller
+      description: get-fixedexpenseentity-by-fixedexpensecatalogentity-Id
+      operationId: followPropertyReference-fixedexpensecatalogentity-get_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - fixed-expense-catalog-entity-property-reference-controller
+      description: delete-fixedexpenseentity-by-fixedexpensecatalogentity-Id
+      operationId: deletePropertyReferenceId-fixedexpensecatalogentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/profile:
+    get:
+      tags:
+      - profile-controller
+      operationId: listAllFormsOfMetadata
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/RepresentationModelObject"
+  /jpa/profile/debt:
+    get:
+      tags:
+      - profile-controller
+      operationId: descriptor
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+            application/alps+json:
+              schema:
+                type: string
+            application/schema+json:
+              schema:
+                $ref: "#/components/schemas/JsonSchema"
+  /jpa/profile/debtAccount:
+    get:
+      tags:
+      - profile-controller
+      operationId: descriptor_1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+            application/alps+json:
+              schema:
+                type: string
+            application/schema+json:
+              schema:
+                $ref: "#/components/schemas/JsonSchema"
+  /jpa/profile/financialProvider:
+    get:
+      tags:
+      - profile-controller
+      operationId: descriptor_2
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+            application/alps+json:
+              schema:
+                type: string
+            application/schema+json:
+              schema:
+                $ref: "#/components/schemas/JsonSchema"
+  /jpa/profile/financialProviderCatalog:
+    get:
+      tags:
+      - profile-controller
+      operationId: descriptor_3
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+            application/alps+json:
+              schema:
+                type: string
+            application/schema+json:
+              schema:
+                $ref: "#/components/schemas/JsonSchema"
+  /jpa/profile/fixedExpense:
+    get:
+      tags:
+      - profile-controller
+      operationId: descriptor_4
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+            application/alps+json:
+              schema:
+                type: string
+            application/schema+json:
+              schema:
+                $ref: "#/components/schemas/JsonSchema"
+  /jpa/profile/fixedExpenseCatalog:
+    get:
+      tags:
+      - profile-controller
+      operationId: descriptor_5
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+            application/alps+json:
+              schema:
+                type: string
+            application/schema+json:
+              schema:
+                $ref: "#/components/schemas/JsonSchema"
+  /jpa/profile/user:
+    get:
+      tags:
+      - profile-controller
+      operationId: descriptor_6
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+            application/alps+json:
+              schema:
+                type: string
+            application/schema+json:
+              schema:
+                $ref: "#/components/schemas/JsonSchema"
+  /jpa/user:
+    get:
+      tags:
+      - debt-sys-user-entity-entity-controller
+      description: get-debtsysuserentity
+      operationId: getCollectionResource-debtsysuserentity-get
+      parameters:
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelDebtSysUserEntity"
+            application/x-spring-data-compact+json:
+              schema:
+                $ref: "#/components/schemas/PagedModelEntityModelDebtSysUserEntity"
+            text/uri-list:
+              schema:
+                type: string
+    post:
+      tags:
+      - debt-sys-user-entity-entity-controller
+      description: create-debtsysuserentity
+      operationId: postCollectionResource-debtsysuserentity-post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtSysUserEntityRequestBody"
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+  /jpa/user/search/findByEmailAndActiveTrue:
+    get:
+      tags:
+      - debt-sys-user-entity-search-controller
+      operationId: executeSearch-debtsysuserentity-get
+      parameters:
+      - name: email
+        in: query
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "404":
+          description: Not Found
+  /jpa/user/{id}:
+    get:
+      tags:
+      - debt-sys-user-entity-entity-controller
+      description: get-debtsysuserentity
+      operationId: getItemResource-debtsysuserentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - debt-sys-user-entity-entity-controller
+      description: update-debtsysuserentity
+      operationId: putItemResource-debtsysuserentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtSysUserEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - debt-sys-user-entity-entity-controller
+      description: delete-debtsysuserentity
+      operationId: deleteItemResource-debtsysuserentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - debt-sys-user-entity-entity-controller
+      description: patch-debtsysuserentity
+      operationId: patchItemResource-debtsysuserentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebtSysUserEntityRequestBody"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        "204":
+          description: No Content
+  /jpa/user/{id}/financialProviders:
+    get:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: get-financialproviderentity-by-debtsysuserentity-Id
+      operationId: followPropertyReference-debtsysuserentity-get
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: update-financialproviderentity-by-debtsysuserentity-Id
+      operationId: createPropertyReference-debtsysuserentity-put
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: delete-financialproviderentity-by-debtsysuserentity-Id
+      operationId: deletePropertyReference-debtsysuserentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: patch-financialproviderentity-by-debtsysuserentity-Id
+      operationId: createPropertyReference-debtsysuserentity-patch
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+        "204":
+          description: No Content
+  /jpa/user/{id}/financialProviders/{propertyId}:
+    get:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: get-financialproviderentity-by-debtsysuserentity-Id
+      operationId: followPropertyReference-debtsysuserentity-get_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFinancialProviderEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: delete-financialproviderentity-by-debtsysuserentity-Id
+      operationId: deletePropertyReferenceId-debtsysuserentity-delete
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /jpa/user/{id}/fixedExpenses:
+    get:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: get-fixedexpenseentity-by-debtsysuserentity-Id
+      operationId: followPropertyReference-debtsysuserentity-get_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+            text/uri-list:
+              schema:
+                type: string
+        "404":
+          description: Not Found
+    put:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: update-fixedexpenseentity-by-debtsysuserentity-Id
+      operationId: createPropertyReference-debtsysuserentity-put_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+        "201":
+          description: Created
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+        "204":
+          description: No Content
+    delete:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: delete-fixedexpenseentity-by-debtsysuserentity-Id
+      operationId: deletePropertyReference-debtsysuserentity-delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+    patch:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: patch-fixedexpenseentity-by-debtsysuserentity-Id
+      operationId: createPropertyReference-debtsysuserentity-patch_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          application/x-spring-data-compact+json:
+            schema:
+              $ref: "#/components/schemas/CollectionModelObject"
+          text/uri-list:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+        "204":
+          description: No Content
+  /jpa/user/{id}/fixedExpenses/{propertyId}:
+    get:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: get-fixedexpenseentity-by-debtsysuserentity-Id
+      operationId: followPropertyReference-debtsysuserentity-get_3
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/CollectionModelFixedExpenseEntity"
+        "404":
+          description: Not Found
+    delete:
+      tags:
+      - debt-sys-user-entity-property-reference-controller
+      description: delete-fixedexpenseentity-by-debtsysuserentity-Id
+      operationId: deletePropertyReferenceId-debtsysuserentity-delete_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: propertyId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+  /debt/management/add/{debtAccountCode}:
+    post:
+      tags:
+      - debt-management-controller
+      operationId: addDebtsToDebtAccount
+      parameters:
+      - name: debtAccountCode
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Debt"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Debt"
+  /account/statement/extract/{debtAccountCode}:
+    post:
+      tags:
+      - account-statement-controller
+      operationId: extractDebts
+      parameters:
+      - name: debtAccountCode
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: accountStatementType
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - MERCADO_PAGO
+          - RAPPI
+          - UNIVERSAL
+          - MANUAL
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+              - file
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Debt"
+  /debt/management/payOff/{debtAccountCode}:
+    patch:
+      tags:
+      - debt-management-controller
+      operationId: payOffDebts
+      parameters:
+      - name: debtAccountCode
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Debt"
+  /financial/status/{email}:
+    get:
+      tags:
+      - financial-status-controller
+      operationId: getUserFinancialStatus
+      parameters:
+      - name: email
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/UserStatusDashboard"
+  /debt/account/status/{debtAccountCode}:
+    get:
+      tags:
+      - debt-account-controller
+      operationId: debtAccountStatus
+      parameters:
+      - name: debtAccountCode
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/hal+json:
+              schema:
+                $ref: "#/components/schemas/DebtAccountStatusDto"
+components:
+  schemas:
+    AbstractJsonSchemaPropertyObject:
+      type: object
+      properties:
+        title:
+          type: string
+        readOnly:
+          type: boolean
+    Item:
+      type: object
+      properties:
+        type:
+          type: string
+        properties:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AbstractJsonSchemaPropertyObject"
+        requiredProperties:
+          type: array
+          items:
+            type: string
+    JsonSchema:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        properties:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/AbstractJsonSchemaPropertyObject"
+        requiredProperties:
+          type: array
+          items:
+            type: string
+        definitions:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Item"
+        type:
+          type: string
+        $schema:
+          type: string
+    RepresentationModelObject:
+      type: object
+      properties:
+        _links:
+          $ref: "#/components/schemas/Links"
+    DebtAccountEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        payDay:
+          type: integer
+          format: int32
+        credit:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        accountStatementType:
+          type: string
+          enum:
+          - MERCADO_PAGO
+          - RAPPI
+          - UNIVERSAL
+          - MANUAL
+        financialProvider:
+          $ref: "#/components/schemas/FinancialProviderEntity"
+        debt:
+          type: array
+          items:
+            $ref: "#/components/schemas/DebtEntity"
+    DebtEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        description:
+          type: string
+        operationDate:
+          type: string
+        currentInstallment:
+          type: integer
+          format: int32
+        maxFinancingTerm:
+          type: integer
+          format: int32
+        originalAmount:
+          type: number
+          format: double
+        monthlyPayment:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        debtAccount:
+          $ref: "#/components/schemas/DebtAccountEntity"
+    DebtSysUserEntity:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        salary:
+          type: number
+          format: double
+        savings:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        fixedExpenses:
+          type: array
+          items:
+            $ref: "#/components/schemas/FixedExpenseEntity"
+        financialProviders:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialProviderEntity"
+    EntityModelFixedExpenseEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        monthlyCost:
+          type: number
+          format: double
+        paymentDay:
+          type: integer
+          format: int32
+        active:
+          type: boolean
+        _links:
+          $ref: "#/components/schemas/Links"
+    FinancialProviderCatalogEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        financialProviders:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinancialProviderEntity"
+    FinancialProviderEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        financialProviderCatalog:
+          $ref: "#/components/schemas/FinancialProviderCatalogEntity"
+        debtSysUser: {}
+        debtAccounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DebtAccountEntity"
+    FixedExpenseCatalogEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        fixedExpenses:
+          type: array
+          items:
+            $ref: "#/components/schemas/FixedExpenseEntity"
+    FixedExpenseEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        monthlyCost:
+          type: number
+          format: double
+        paymentDay:
+          type: integer
+          format: int32
+        active:
+          type: boolean
+        debtSysUser:
+          $ref: "#/components/schemas/DebtSysUserEntity"
+        fixedExpenseCatalog:
+          $ref: "#/components/schemas/FixedExpenseCatalogEntity"
+    PageMetadata:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int64
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int64
+        number:
+          type: integer
+          format: int64
+    PagedModelEntityModelFixedExpenseEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            fixedExpense:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelFixedExpenseEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    EntityModelFixedExpenseCatalogEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        _links:
+          $ref: "#/components/schemas/Links"
+    CollectionModelObject:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            objects:
+              type: array
+              items: {}
+        _links:
+          $ref: "#/components/schemas/Links"
+    EntityModelDebtSysUserEntity:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        salary:
+          type: number
+          format: double
+        savings:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        _links:
+          $ref: "#/components/schemas/Links"
+    CollectionModelEntityModelFixedExpenseEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            fixedExpense:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelFixedExpenseEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+    EntityModelFinancialProviderEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        _links:
+          $ref: "#/components/schemas/Links"
+    PagedModelEntityModelFinancialProviderEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            financialProvider:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    CollectionModelDebtAccountEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            debtAccount:
+              type: array
+              items:
+                $ref: "#/components/schemas/DebtAccountEntityResponse"
+        _links:
+          $ref: "#/components/schemas/Links"
+    EntityModelFinancialProviderCatalogEntity:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        _links:
+          $ref: "#/components/schemas/Links"
+    CollectionModelEntityModelFinancialProviderEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            financialProvider:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelFinancialProviderEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+    EntityModelDebtEntity:debtSysUser
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        description:
+          type: string
+        operationDate:
+          type: string
+        currentInstallment:
+          type: integer
+          format: int32
+        maxFinancingTerm:
+          type: integer
+          format: int32
+        originalAmount:
+          type: number
+          format: double
+        monthlyPayment:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        _links:
+          $ref: "#/components/schemas/Links"
+    PagedModelEntityModelDebtEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            debt:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelDebtEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    EntityModelDebtAccountEntity:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        payDay:
+          type: integer
+          format: int32
+        credit:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        accountStatementType:
+          type: string
+          enum:
+          - MERCADO_PAGO
+          - RAPPI
+          - UNIVERSAL
+          - MANUAL
+        _links:
+          $ref: "#/components/schemas/Links"
+    CollectionModelEntityModelDebtEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            debt:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelDebtEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+    PagedModelEntityModelDebtAccountEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            debtAccount:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    CollectionModelDebtEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            debt:
+              type: array
+              items:
+                $ref: "#/components/schemas/DebtEntityResponse"
+        _links:
+          $ref: "#/components/schemas/Links"
+    CollectionModelEntityModelDebtAccountEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            debtAccount:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelDebtAccountEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+    PagedModelEntityModelFinancialProviderCatalogEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            financialProviderCatalog:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelFinancialProviderCatalogEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    CollectionModelFinancialProviderEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            financialProvider:
+              type: array
+              items:
+                $ref: "#/components/schemas/FinancialProviderEntityResponse"
+        _links:
+          $ref: "#/components/schemas/Links"
+    PagedModelEntityModelFixedExpenseCatalogEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            fixedExpenseCatalog:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelFixedExpenseCatalogEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    CollectionModelFixedExpenseEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            fixedExpense:
+              type: array
+              items:
+                $ref: "#/components/schemas/FixedExpenseEntityResponse"
+        _links:
+          $ref: "#/components/schemas/Links"
+    PagedModelEntityModelDebtSysUserEntity:
+      type: object
+      properties:
+        _embedded:
+          type: object
+          properties:
+            user:
+              type: array
+              items:
+                $ref: "#/components/schemas/EntityModelDebtSysUserEntity"
+        _links:
+          $ref: "#/components/schemas/Links"
+        page:
+          $ref: "#/components/schemas/PageMetadata"
+    DebtAccountEntityRequestBody:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        payDay:
+          type: integer
+          format: int32
+        credit:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        accountStatementType:
+          type: string
+          enum:
+          - MERCADO_PAGO
+          - RAPPI
+          - UNIVERSAL
+          - MANUAL
+        financialProvider:
+          type: string
+        debt:
+          type: array
+          items:
+            type: string
+    DebtEntityRequestBody:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        description:
+          type: string
+        operationDate:
+          type: string
+        currentInstallment:
+          type: integer
+          format: int32
+        maxFinancingTerm:
+          type: integer
+          format: int32
+        originalAmount:
+          type: number
+          format: double
+        monthlyPayment:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        debtAccount:
+          type: string
+    DebtSysUserEntityRequestBody:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        salary:
+          type: number
+          format: double
+        savings:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        fixedExpenses:
+          type: array
+          items:
+            type: string
+        financialProviders:
+          type: array
+          items:
+            type: string
+    FinancialProviderCatalogEntityRequestBody:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        financialProviders:
+          type: array
+          items:
+            type: string
+    FinancialProviderEntityRequestBody:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        financialProviderCatalog:
+          type: string
+        debtSysUser:
+          type: string
+        debtAccounts:
+          type: array
+          items:
+            type: string
+    FixedExpenseCatalogEntityRequestBody:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        fixedExpenses:
+          type: array
+          items:
+            type: string
+    FixedExpenseEntityRequestBody:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        monthlyCost:
+          type: number
+          format: double
+        paymentDay:
+          type: integer
+          format: int32
+        active:
+          type: boolean
+        debtSysUser:
+          type: string
+        fixedExpenseCatalog:
+          type: string
+    DebtAccountEntityResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        payDay:
+          type: integer
+          format: int32
+        credit:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        accountStatementType:
+          type: string
+          enum:
+          - MERCADO_PAGO
+          - RAPPI
+          - UNIVERSAL
+          - MANUAL
+        financialProvider:
+          $ref: "#/components/schemas/FinancialProviderEntity"
+        debt:
+          type: array
+          items:
+            $ref: "#/components/schemas/DebtEntity"
+    DebtEntityResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        description:
+          type: string
+        operationDate:
+          type: string
+        currentInstallment:
+          type: integer
+          format: int32
+        maxFinancingTerm:
+          type: integer
+          format: int32
+        originalAmount:
+          type: number
+          format: double
+        monthlyPayment:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        debtAccount:
+          $ref: "#/components/schemas/DebtAccountEntity"
+    FinancialProviderEntityResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        financialProviderCatalog:
+          $ref: "#/components/schemas/FinancialProviderCatalogEntity"
+        debtSysUser: {}
+        debtAccounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DebtAccountEntity"
+    FixedExpenseEntityResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        monthlyCost:
+          type: number
+          format: double
+        paymentDay:
+          type: integer
+          format: int32
+        active:
+          type: boolean
+    Debt:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        description:
+          type: string
+        operationDate:
+          type: string
+        currentInstallment:
+          type: integer
+          format: int32
+        maxFinancingTerm:
+          type: integer
+          format: int32
+        originalAmount:
+          type: number
+          format: double
+        monthlyPayment:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        debtAccount:
+          $ref: "#/components/schemas/DebtAccount"
+    DebtAccount:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        payDay:
+          type: integer
+          format: int32
+        credit:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+        accountStatementType:
+          type: string
+          enum:
+          - MERCADO_PAGO
+          - RAPPI
+          - UNIVERSAL
+          - MANUAL
+    AlmostCompletedDebtsDto:
+      type: object
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+        monthlyPayment:
+          type: number
+          format: double
+        currentInstallment:
+          type: integer
+          format: int32
+        maxFinancingTerm:
+          type: integer
+          format: int32
+    FixedExpense:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        monthlyCost:
+          type: number
+          format: double
+        paymentDay:
+          type: integer
+          format: int32
+        active:
+          type: boolean
+        debtSysUser:
+          $ref: "#/components/schemas/SystemUser"
+        fixedExpenseCatalog:
+          $ref: "#/components/schemas/FixedExpenseCatalog"
+    FixedExpenseCatalog:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+    SystemUser:
+      type: object
+      properties:
+        email:
+          type: string
+        name:
+          type: string
+        salary:
+          type: number
+          format: double
+        savings:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        active:
+          type: boolean
+    UserStatusDashboard:
+      type: object
+      properties:
+        salary:
+          type: number
+          format: double
+        savings:
+          type: number
+          format: double
+        monthlyDebtPaymentAmount:
+          type: number
+          format: double
+        monthlyFixedExpensesAmount:
+          type: number
+          format: double
+        userDebtAccounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/DebtAccount"
+        almostCompletedDebts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlmostCompletedDebtsDto"
+        userFixedExpenses:
+          type: array
+          items:
+            $ref: "#/components/schemas/FixedExpense"
+    DebtAccountStatusDto:
+      type: object
+      properties:
+        debtAccount:
+          $ref: "#/components/schemas/DebtAccount"
+        monthPayment:
+          type: number
+          format: double
+        debts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Debt"
+        almostCompletedDebts:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlmostCompletedDebtsDto"
+    Link:
+      type: object
+      properties:
+        href:
+          type: string
+        hreflang:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        deprecation:
+          type: string
+        profile:
+          type: string
+        name:
+          type: string
+        templated:
+          type: boolean
+    Links:
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/Link"
