@@ -1,73 +1,86 @@
 "use client"
 
 import { useState } from "react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast"
+import { Trash2, CreditCard, Calendar, Percent, DollarSign, CheckCircle, Loader2 } from "lucide-react"
 import type { DebtAccount } from "@/domain/entities/debt-account"
-import { Trash2, Eye } from "lucide-react"
-import { debtRepository } from "@/infrastructure/repositories/api-debt-repository"
+import { DebtManagementService } from "@/application/services/debt-management-service"
 
 interface DebtAccountListProps {
   debtAccounts: DebtAccount[]
-  onAccountDeleted: () => void
+  onDelete: (code: string) => void
+  onRefresh: () => void
 }
 
-export function DebtAccountList({ debtAccounts, onAccountDeleted }: DebtAccountListProps) {
-  const [loadingStatus, setLoadingStatus] = useState<Record<string, boolean>>({})
-  const [accountStatuses, setAccountStatuses] = useState<Record<string, string>>({})
-  const [loadingPayOff, setLoadingPayOff] = useState<Record<string, boolean>>({})
+export function DebtAccountList({ debtAccounts, onDelete, onRefresh }: DebtAccountListProps) {
+  const [deletingAccount, setDeletingAccount] = useState<string | null>(null)
+  const [payingOffAccount, setPayingOffAccount] = useState<string | null>(null)
+  const { toast } = useToast()
+  const debtManagementService = new DebtManagementService()
 
   const handleDelete = async (code: string) => {
-    if (!confirm("Are you sure you want to delete this debt account?")) {
-      return
-    }
-
+    setDeletingAccount(code)
     try {
-      await debtAccountRepository.delete(code)
-      onAccountDeleted()
+      await onDelete(code)
+      toast({
+        title: "Success",
+        description: "Debt account deleted successfully",
+      })
     } catch (error) {
-      console.error("Error deleting debt account:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete debt account",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingAccount(null)
     }
   }
 
-  const handleViewStatus = async (code: string) => {
-    setLoadingStatus({ ...loadingStatus, [code]: true })
+  const handlePayOff = async (debtAccountCode: string, accountName: string) => {
+    setPayingOffAccount(debtAccountCode)
     try {
-      const status = await debtAccountRepository.getStatus(code)
-      setAccountStatuses({ ...accountStatuses, [code]: status })
+      await debtManagementService.payOffDebt(debtAccountCode)
+      toast({
+        title: "Success",
+        description: `Debt account "${accountName}" has been paid off successfully!`,
+      })
+      onRefresh() // Refresh the data to show updated status
     } catch (error) {
-      console.error("Error getting account status:", error)
+      console.error("Error paying off debt:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to pay off debt account",
+        variant: "destructive",
+      })
     } finally {
-      setLoadingStatus({ ...loadingStatus, [code]: false })
-    }
-  }
-
-  const handlePayOff = async (code: string) => {
-    if (!confirm("Are you sure you want to pay off all debts for this account? This action cannot be undone.")) {
-      return
-    }
-
-    setLoadingPayOff({ ...loadingPayOff, [code]: true })
-    try {
-      const result = await debtRepository.payOffDebts(code)
-      console.log("Pay off result:", result)
-      alert(`Successfully paid off debts: ${result}`)
-      onAccountDeleted() // Refresh the data
-    } catch (error) {
-      console.error("Error paying off debts:", error)
-      alert(`Failed to pay off debts: ${error instanceof Error ? error.message : "Unknown error"}`)
-    } finally {
-      setLoadingPayOff({ ...loadingPayOff, [code]: false })
+      setPayingOffAccount(null)
     }
   }
 
   if (debtAccounts.length === 0) {
     return (
       <Card>
-        <CardContent className="flex items-center justify-center h-32">
-          <p className="text-muted-foreground">No debt accounts found. Create your first account to get started.</p>
+        <CardContent className="flex flex-col items-center justify-center h-64">
+          <CreditCard className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No debt accounts found</h3>
+          <p className="text-muted-foreground text-center">
+            Create your first debt account to start managing your debts.
+          </p>
         </CardContent>
       </Card>
     )
@@ -76,58 +89,112 @@ export function DebtAccountList({ debtAccounts, onAccountDeleted }: DebtAccountL
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {debtAccounts.map((account) => (
-        <Card key={account.code}>
+        <Card key={account.code} className="relative">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">{account.name}</CardTitle>
-              <Badge variant="secondary">{account.code}</Badge>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <CardTitle className="text-lg">{account.name}</CardTitle>
+                <CardDescription>Code: {account.code}</CardDescription>
+              </div>
+              <Badge variant={account.status === "Active" ? "default" : "secondary"}>{account.status}</Badge>
             </div>
-            <CardDescription>
-              Pay day: {account.payDay} | Credit: ${account.credit.toFixed(2)}
-            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span>Statement Type:</span>
-                <Badge variant="outline">{account.accountStatementType}</Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span>Status:</span>
-                <Badge variant={account.active ? "default" : "destructive"}>
-                  {account.active ? "Active" : "Inactive"}
-                </Badge>
-              </div>
-
-              {accountStatuses[account.code] && (
-                <div className="mt-2 p-2 bg-muted rounded text-sm">
-                  <strong>Status:</strong> {accountStatuses[account.code]}
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Credit Limit</span>
                 </div>
-              )}
-
-              <div className="flex space-x-2 mt-4">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleViewStatus(account.code)}
-                  disabled={loadingStatus[account.code]}
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  {loadingStatus[account.code] ? "Loading..." : "Status"}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="default"
-                  onClick={() => handlePayOff(account.code)}
-                  disabled={loadingPayOff[account.code]}
-                >
-                  {loadingPayOff[account.code] ? "Paying..." : "Pay Off"}
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDelete(account.code)}>
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
+                <p className="text-lg font-semibold">${account.credit.toLocaleString()}</p>
               </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Pay Day</span>
+                </div>
+                <p className="text-lg font-semibold">{account.payDay}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Percent className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Interest Rate</span>
+              </div>
+              <p className="text-lg font-semibold">{account.interestRate}%</p>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 bg-transparent"
+                    disabled={payingOffAccount === account.code || account.status !== "Active"}
+                  >
+                    {payingOffAccount === account.code ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Paying Off...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Pay Off
+                      </>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Pay Off Debt Account</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to pay off the debt account "{account.name}"? This action will mark all
+                      associated debts as paid and cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handlePayOff(account.code, account.name)}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      Pay Off Account
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm" disabled={deletingAccount === account.code}>
+                    {deletingAccount === account.code ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Debt Account</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{account.name}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleDelete(account.code)}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </CardContent>
         </Card>

@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://192.168.50.180:666"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.50.180:666"
 const DEFAULT_USER_EMAIL = "jimm0063@gmail.com"
 
 export class ApiClient {
