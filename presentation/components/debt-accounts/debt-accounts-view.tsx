@@ -9,7 +9,7 @@ import { DebtAccountList } from "./debt-account-list"
 import { StatementUpload } from "../debts/statement-upload"
 import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import type { DebtAccount } from "@/domain/entities/debt-account"
-import { Plus, Upload } from "lucide-react"
+import { Plus, Upload } from 'lucide-react'
 
 export function DebtAccountsView() {
   const [debtAccounts, setDebtAccounts] = useState<DebtAccount[]>([])
@@ -37,13 +37,10 @@ export function DebtAccountsView() {
     loadDebtAccounts()
   }
 
-  const handleAccountDeleted = () => {
-    loadDebtAccounts()
-  }
-
   const handleStatementUploaded = () => {
     setShowUpload(false)
-    // Optionally refresh data or show success message
+    // Refresh debt accounts after statement upload
+    loadDebtAccounts()
   }
 
   if (loading) {
@@ -99,12 +96,16 @@ export function DebtAccountsView() {
               <CardDescription>Upload a statement to automatically extract debts</CardDescription>
             </CardHeader>
             <CardContent>
-              <StatementUpload onSuccess={handleStatementUploaded} onCancel={() => setShowUpload(false)} />
+              <StatementUpload
+                debtAccounts={debtAccounts}
+                onSuccess={handleStatementUploaded}
+                onCancel={() => setShowUpload(false)}
+              />
             </CardContent>
           </Card>
         )}
 
-        <DebtAccountList debtAccounts={debtAccounts} onAccountDeleted={handleAccountDeleted} />
+        <DebtAccountList />
       </div>
     </div>
   )
