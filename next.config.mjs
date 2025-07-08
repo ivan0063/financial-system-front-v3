@@ -1,39 +1,32 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable standalone output for Docker
   output: 'standalone',
-  
-  // Disable strict mode for better compatibility
-  reactStrictMode: true,
-  
-  // Enable SWC minification
-  swcMinify: true,
-  
-  // Configure images domain if needed
-  images: {
-    domains: ['localhost', '192.168.50.180'],
-    unoptimized: true,
+  experimental: {
+    serverComponentsExternalPackages: [],
   },
-  
-  // Environment variables
   env: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
   },
-  
-  // Experimental features
-  experimental: {
-    // Enable app directory
-    appDir: true,
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
+        ],
+      },
+    ]
   },
-  
-  // ESLint configuration
   eslint: {
     ignoreDuringBuilds: true,
   },
-  
-  // TypeScript configuration
   typescript: {
     ignoreBuildErrors: true,
+  },
+  images: {
+    unoptimized: true,
   },
 }
 

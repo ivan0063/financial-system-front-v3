@@ -1,40 +1,78 @@
-import { apiClient } from "@/infrastructure/api/api-client"
-import type { Debt } from "@/domain/entities/debt"
+import { apiClient } from "../../infrastructure/api/api-client"
+
+export interface Debt {
+  id: number
+  description: string
+  operationDate: string
+  currentInstallment: number
+  maxFinancingTerm: number
+  originalAmount: number
+  monthlyPayment: number
+  createdAt: string
+  updatedAt: string
+  active: boolean
+  debtAccount: {
+    code: string
+    name: string
+    payDay: number
+    credit: number
+    createdAt: string
+    updatedAt: string
+    active: boolean
+    accountStatementType: "MERCADO_PAGO" | "RAPPI" | "UNIVERSAL" | "MANUAL"
+  }
+}
+
+export interface DebtAccountStatusDto {
+  debtAccount: {
+    code: string
+    name: string
+    payDay: number
+    credit: number
+    createdAt: string
+    updatedAt: string
+    active: boolean
+    accountStatementType: "MERCADO_PAGO" | "RAPPI" | "UNIVERSAL" | "MANUAL"
+  }
+  monthPayment: number
+  debts: Debt[]
+  almostCompletedDebts: {
+    code: string
+    description: string
+    monthlyPayment: number
+    currentInstallment: number
+    maxFinancingTerm: number
+  }[]
+}
 
 export class DebtManagementService {
-  async payOffDebts(debtAccountCode: string): Promise<string> {
+  async payOffDebts(debtAccountCode: string): Promise<Debt[]> {
     try {
-      console.log(`Attempting to pay off debts for account: ${debtAccountCode}`)
-      const result = await apiClient.patch<string>(`/debt/management/payOff/${debtAccountCode}`)
-      console.log(`Successfully paid off debts for account ${debtAccountCode}:`, result)
-      return result
+      const response = await apiClient.patch<Debt[]>(`/debt/management/payOff/${debtAccountCode}`)
+      return response
     } catch (error) {
-      console.error(`Failed to pay off debts for account ${debtAccountCode}:`, error)
-      throw new Error(`Failed to pay off debts: ${error instanceof Error ? error.message : "Unknown error"}`)
+      console.error("Error paying off debts:", error)
+      throw new Error("Failed to pay off debts")
     }
   }
 
-  async addDebtsToAccount(debtAccountCode: string, debts: Debt[]): Promise<string> {
+  async addDebtsToAccount(debtAccountCode: string, debts: Debt[]): Promise<Debt[]> {
     try {
-      console.log(`Adding ${debts.length} debts to account: ${debtAccountCode}`)
-      const result = await apiClient.post<string>(`/debt/management/add/${debtAccountCode}`, debts)
-      console.log(`Successfully added debts to account ${debtAccountCode}:`, result)
-      return result
+      const response = await apiClient.post<Debt[]>(`/debt/management/add/${debtAccountCode}`, debts)
+      return response
     } catch (error) {
-      console.error(`Failed to add debts to account ${debtAccountCode}:`, error)
-      throw new Error(`Failed to add debts: ${error instanceof Error ? error.message : "Unknown error"}`)
+      console.error("Error adding debts to account:", error)
+      throw new Error("Failed to add debts to account")
     }
   }
 
-  async getAccountStatus(debtAccountCode: string): Promise<string> {
+  async getDebtAccountStatus(debtAccountCode: string): Promise<DebtAccountStatusDto> {
     try {
-      console.log(`Getting status for account: ${debtAccountCode}`)
-      const result = await apiClient.get<string>(`/debt/account/status/${debtAccountCode}`)
-      console.log(`Account ${debtAccountCode} status:`, result)
-      return result
+      const response = await apiClient.get<DebtAccountStatusDto>(`/debt/account/status/${debtAccountCode}`)
+      return response
     } catch (error) {
-      console.error(`Failed to get status for account ${debtAccountCode}:`, error)
-      throw new Error(`Failed to get account status: ${error instanceof Error ? error.message : "Unknown error"}`)
+      console.error("Error fetching debt account status:", error)
+      throw new Error("Failed to fetch debt account status")
     }
   }
 }

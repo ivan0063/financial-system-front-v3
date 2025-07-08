@@ -2,131 +2,82 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { RefreshCw, User, CreditCard, DollarSign, TrendingUp, Calendar, PiggyBank, AlertTriangle } from "lucide-react"
-import { FinancialStatusService, type FinancialStatusResponse } from "@/application/services/financial-status-service"
-import { DEFAULT_USER_EMAIL } from "@/infrastructure/api/api-client"
+import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useRouter } from "next/navigation"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { DollarSign, CreditCard, TrendingUp, AlertTriangle, PiggyBank, Calendar, Target } from "lucide-react"
+import {
+  financialStatusService,
+  type UserStatusDashboard,
+} from "../../../application/services/financial-status-service"
+import { DEFAULT_USER_EMAIL } from "../../../infrastructure/api/api-client"
 
 export function DashboardView() {
-  const [financialStatus, setFinancialStatus] = useState<FinancialStatusResponse | null>(null)
+  const [dashboardData, setDashboardData] = useState<UserStatusDashboard | null>(null)
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
-
-  const financialStatusService = new FinancialStatusService()
-
-  const fetchFinancialStatus = async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true)
-    } else {
-      setLoading(true)
-    }
-    setError(null)
-
-    try {
-      const status = await financialStatusService.execute(DEFAULT_USER_EMAIL)
-      setFinancialStatus(status)
-    } catch (error) {
-      console.error("Error fetching financial status:", error)
-      setError(error instanceof Error ? error.message : "Failed to load financial status")
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }
 
   useEffect(() => {
-    fetchFinancialStatus()
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const data = await financialStatusService.getUserFinancialStatus(DEFAULT_USER_EMAIL)
+        setDashboardData(data)
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err)
+        setError("Failed to load dashboard data. Please try again.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDashboardData()
   }, [])
 
-  const handleRefresh = () => {
-    fetchFinancialStatus(true)
-  }
-
   if (loading) {
-    return (
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-24" />
-        </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-24" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    )
+    return <DashboardSkeleton />
   }
 
   if (error) {
     return (
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <Card className="border-red-200">
-          <CardContent className="flex flex-col items-center justify-center h-64 space-y-4">
-            <p className="text-red-600">Error: {error}</p>
-            <Button onClick={() => fetchFinancialStatus()} variant="outline">
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       </div>
     )
   }
 
-  if (!financialStatus) {
+  if (!dashboardData) {
     return (
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <Card>
-          <CardContent className="flex items-center justify-center h-64">
-            <p className="text-muted-foreground">No financial status data available.</p>
-          </CardContent>
-        </Card>
+      <div className="p-6">
+        <Alert>
+          <AlertDescription>No dashboard data available.</AlertDescription>
+        </Alert>
       </div>
     )
   }
 
-  const {
-    salary,
-    savings,
-    monthlyDebtPaymentAmount,
-    monthlyFixedExpensesAmount,
-    userDebtAccounts,
-    almostCompletedDebts,
-    userFixedExpenses,
-  } = financialStatus
-
-  const totalDebtBalance = userDebtAccounts.reduce((sum, account) => sum + account.currentBalance, 0)
-  const totalCreditLimit = userDebtAccounts.reduce((sum, account) => sum + account.creditLimit, 0)
-  const totalAvailableCredit = totalCreditLimit - totalDebtBalance
-  const monthlyNetIncome = salary - monthlyDebtPaymentAmount - monthlyFixedExpensesAmount
+  const availableIncome =
+    dashboardData.salary - dashboardData.monthlyDebtPaymentAmount - dashboardData.monthlyFixedExpensesAmount
+  const debtToIncomeRatio =
+    dashboardData.salary > 0 ? (dashboardData.monthlyDebtPaymentAmount / dashboardData.salary) * 100 : 0
+  const expenseToIncomeRatio =
+    dashboardData.salary > 0 ? (dashboardData.monthlyFixedExpensesAmount / dashboardData.salary) * 100 : 0
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
-      {/* Header */}
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Financial Status</h1>
-          <p className="text-muted-foreground">Your comprehensive financial overview</p>
+          <h1 className="text-3xl font-bold tracking-tight">Financial Dashboard</h1>
+          <p className="text-muted-foreground">Overview of your financial status and debt management</p>
         </div>
-        <Button onClick={handleRefresh} disabled={refreshing} variant="outline" size="sm">
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-          {refreshing ? "Refreshing..." : "Refresh"}
-        </Button>
       </div>
 
-      {/* Financial Overview Cards */}
+      {/* Key Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -134,8 +85,8 @@ export function DashboardView() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${salary.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Monthly income</p>
+            <div className="text-2xl font-bold">${dashboardData.salary.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Your monthly income</p>
           </CardContent>
         </Card>
 
@@ -145,8 +96,8 @@ export function DashboardView() {
             <PiggyBank className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">${savings.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Total savings</p>
+            <div className="text-2xl font-bold">${dashboardData.savings.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">Total savings amount</p>
           </CardContent>
         </Card>
 
@@ -156,211 +107,194 @@ export function DashboardView() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">${monthlyDebtPaymentAmount.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Monthly debt obligations</p>
+            <div className="text-2xl font-bold">${dashboardData.monthlyDebtPaymentAmount.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">{debtToIncomeRatio.toFixed(1)}% of income</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fixed Expenses</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Available Income</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">${monthlyFixedExpensesAmount.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Monthly fixed costs</p>
+            <div className="text-2xl font-bold">${availableIncome.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">After debts and expenses</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Net Income Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Monthly Financial Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Monthly Income</p>
-              <p className="text-2xl font-bold text-green-600">${salary.toLocaleString()}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Total Monthly Expenses</p>
-              <p className="text-2xl font-bold text-red-600">
-                ${(monthlyDebtPaymentAmount + monthlyFixedExpensesAmount).toLocaleString()}
-              </p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Net Monthly Income</p>
-              <p className={`text-2xl font-bold ${monthlyNetIncome >= 0 ? "text-green-600" : "text-red-600"}`}>
-                ${monthlyNetIncome.toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Debt Accounts Overview */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5" />
-              Debt Accounts ({userDebtAccounts.length})
-            </CardTitle>
-            <Button onClick={() => router.push("/debt-accounts")} variant="outline" size="sm">
-              Manage All
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-3 mb-4">
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Total Balance</p>
-                <p className="text-xl font-bold text-red-600">${totalDebtBalance.toLocaleString()}</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Credit Limit</p>
-                <p className="text-xl font-bold">${totalCreditLimit.toLocaleString()}</p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Available Credit</p>
-                <p className="text-xl font-bold text-green-600">${totalAvailableCredit.toLocaleString()}</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {userDebtAccounts.slice(0, 3).map((account) => (
-                <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{account.accountName}</p>
-                      <Badge variant={account.status === "Active" ? "default" : "secondary"}>{account.status}</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {account.financialProvider} • {account.interestRate}% APR
-                    </p>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p className="font-medium text-red-600">${account.currentBalance.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">
-                      ${account.availableCredit.toLocaleString()} available
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {userDebtAccounts.length > 3 && (
-                <div className="text-center pt-2">
-                  <Button onClick={() => router.push("/debt-accounts")} variant="ghost" size="sm">
-                    View {userDebtAccounts.length - 3} more accounts
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Almost Completed Debts */}
-      {almostCompletedDebts.length > 0 && (
+      {/* Financial Health Overview */}
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              Almost Completed Debts
-            </CardTitle>
-            <CardDescription>Debts that are close to being paid off</CardDescription>
+            <CardTitle>Debt-to-Income Ratio</CardTitle>
+            <CardDescription>Recommended to keep below 36%</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span>Debt Payments</span>
+                <span>{debtToIncomeRatio.toFixed(1)}%</span>
+              </div>
+              <Progress value={debtToIncomeRatio} className="h-2" max={100} />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span>Fixed Expenses</span>
+                <span>{expenseToIncomeRatio.toFixed(1)}%</span>
+              </div>
+              <Progress value={expenseToIncomeRatio} className="h-2" max={100} />
+            </div>
+            {debtToIncomeRatio > 36 && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Your debt-to-income ratio is above the recommended 36%. Consider debt consolidation or payment
+                  strategies.
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Fixed Expenses</CardTitle>
+            <CardDescription>Total: ${dashboardData.monthlyFixedExpensesAmount.toLocaleString()}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {almostCompletedDebts.map((debt) => (
-                <div key={debt.id} className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50">
-                  <div className="space-y-1">
-                    <p className="font-medium">{debt.accountName}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {((debt.currentBalance / debt.creditLimit) * 100).toFixed(1)}% of credit limit used
-                    </p>
+              {dashboardData.userFixedExpenses.length > 0 ? (
+                dashboardData.userFixedExpenses.map((expense) => (
+                  <div key={expense.id} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{expense.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        Day {expense.paymentDay}
+                      </Badge>
+                    </div>
+                    <span className="text-sm font-medium">${expense.monthlyCost.toLocaleString()}</span>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium text-yellow-700">${debt.currentBalance.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">remaining</p>
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No fixed expenses recorded</p>
+              )}
             </div>
           </CardContent>
         </Card>
-      )}
+      </div>
 
-      {/* Fixed Expenses */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Fixed Expenses ({userFixedExpenses.length})
-            </CardTitle>
-            <Button onClick={() => router.push("/fixed-expenses")} variant="outline" size="sm">
-              Manage All
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {userFixedExpenses.slice(0, 5).map((expense) => (
-              <div key={expense.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-1">
-                  <p className="font-medium">{expense.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {expense.category} • Due: {new Date(expense.dueDate).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium">${expense.amount.toLocaleString()}</p>
-                </div>
-              </div>
-            ))}
-            {userFixedExpenses.length > 5 && (
-              <div className="text-center pt-2">
-                <Button onClick={() => router.push("/fixed-expenses")} variant="ghost" size="sm">
-                  View {userFixedExpenses.length - 5} more expenses
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Debt Accounts and Almost Completed Debts */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Debt Accounts</CardTitle>
+            <CardDescription>{dashboardData.userDebtAccounts.length} active account(s)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {dashboardData.userDebtAccounts.length > 0 ? (
+                dashboardData.userDebtAccounts.map((account) => (
+                  <div key={account.code} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">{account.name}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Code: {account.code} • Pay Day: {account.payDay}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-medium">${account.credit.toLocaleString()}</div>
+                      <Badge variant="secondary" className="text-xs">
+                        {account.accountStatementType}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No debt accounts found</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <Button onClick={() => router.push("/debt-accounts")} variant="outline" className="justify-start">
-              <CreditCard className="h-4 w-4 mr-2" />
-              Manage Accounts
-            </Button>
-            <Button onClick={() => router.push("/debts")} variant="outline" className="justify-start">
-              <DollarSign className="h-4 w-4 mr-2" />
-              View Debts
-            </Button>
-            <Button onClick={() => router.push("/fixed-expenses")} variant="outline" className="justify-start">
-              <Calendar className="h-4 w-4 mr-2" />
-              Fixed Expenses
-            </Button>
-            <Button onClick={() => router.push("/profile")} variant="outline" className="justify-start">
-              <User className="h-4 w-4 mr-2" />
-              Profile Settings
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Almost Completed Debts</CardTitle>
+            <CardDescription>Debts nearing completion</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {dashboardData.almostCompletedDebts.length > 0 ? (
+                dashboardData.almostCompletedDebts.map((debt, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex-1">
+                      <div className="font-medium">{debt.description}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {debt.currentInstallment} of {debt.maxFinancingTerm} payments
+                      </div>
+                      <Progress value={(debt.currentInstallment / debt.maxFinancingTerm) * 100} className="h-2 mt-2" />
+                    </div>
+                    <div className="text-right ml-4">
+                      <div className="font-medium">${debt.monthlyPayment.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">monthly</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex items-center space-x-2 text-muted-foreground">
+                  <Target className="h-4 w-4" />
+                  <span className="text-sm">No debts nearing completion</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="p-6 space-y-6">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-4 w-96" />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-24 mb-2" />
+              <Skeleton className="h-3 w-20" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-32" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, j) => (
+                  <Skeleton key={j} className="h-12 w-full" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   )
 }

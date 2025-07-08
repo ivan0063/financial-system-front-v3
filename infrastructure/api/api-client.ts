@@ -100,6 +100,37 @@ class ApiClient {
       throw error
     }
   }
+
+  async uploadFile<T>(endpoint: string, file: File, additionalData?: Record<string, string>): Promise<T> {
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+
+      if (additionalData) {
+        Object.entries(additionalData).forEach(([key, value]) => {
+          formData.append(key, value)
+        })
+      }
+
+      const response = await fetch(`${this.baseURL}${endpoint}`, {
+        method: "POST",
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error(`API upload error for ${endpoint}:`, error)
+      throw error
+    }
+  }
+
+  getBaseURL(): string {
+    return this.baseURL
+  }
 }
 
 export const apiClient = new ApiClient()

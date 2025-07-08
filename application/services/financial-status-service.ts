@@ -1,52 +1,62 @@
-import type { GetFinancialStatusUseCase } from "@/domain/use-cases/get-financial-status"
-import { apiClient } from "@/infrastructure/api/api-client"
+import { apiClient } from "../../infrastructure/api/api-client"
 
-export interface FinancialStatusResponse {
+export interface AlmostCompletedDebt {
+  code: string
+  description: string
+  monthlyPayment: number
+  currentInstallment: number
+  maxFinancingTerm: number
+}
+
+export interface FixedExpense {
+  id: number
+  name: string
+  monthlyCost: number
+  paymentDay: number
+  active: boolean
+}
+
+export interface DebtAccount {
+  code: string
+  name: string
+  payDay: number
+  credit: number
+  createdAt: string
+  updatedAt: string
+  active: boolean
+  accountStatementType: "MERCADO_PAGO" | "RAPPI" | "UNIVERSAL" | "MANUAL"
+}
+
+export interface UserStatusDashboard {
   salary: number
   savings: number
   monthlyDebtPaymentAmount: number
   monthlyFixedExpensesAmount: number
-  userDebtAccounts: Array<{
-    id: string
-    debtAccountCode: string
-    accountName: string
-    financialProvider: string
-    accountType: string
-    currentBalance: number
-    creditLimit: number
-    availableCredit: number
-    interestRate: number
-    minimumPayment: number
-    dueDate: string
-    status: string
-    createdAt: string
-    updatedAt: string
-  }>
-  almostCompletedDebts: Array<{
-    id: string
-    debtAccountCode: string
-    accountName: string
-    currentBalance: number
-    creditLimit: number
-  }>
-  userFixedExpenses: Array<{
-    id: string
-    name: string
-    amount: number
-    category: string
-    dueDate: string
-  }>
+  userDebtAccounts: DebtAccount[]
+  almostCompletedDebts: AlmostCompletedDebt[]
+  userFixedExpenses: FixedExpense[]
 }
 
-export class FinancialStatusService implements GetFinancialStatusUseCase {
-  async execute(email: string): Promise<FinancialStatusResponse> {
+export class FinancialStatusService {
+  async getUserFinancialStatus(email: string): Promise<UserStatusDashboard> {
     try {
-      // The API returns JSON even though the spec says string
-      const response = await apiClient.get<FinancialStatusResponse>(`/financial/status/${email}`)
+      const response = await apiClient.get<UserStatusDashboard>(`/financial/status/${email}`)
       return response
     } catch (error) {
-      console.error("Error fetching financial status:", error)
+      console.error("Error fetching user financial status:", error)
       throw new Error("Failed to fetch financial status")
     }
   }
+
+  async getDebtAccountStatus(debtAccountCode: string) {
+    try {
+      const response = await apiClient.get(`/debt/account/status/${debtAccountCode}`)
+      return response
+    } catch (error) {
+      console.error("Error fetching debt account status:", error)
+      throw new Error("Failed to fetch debt account status")
+    }
+  }
 }
+
+export const financialStatusService = new FinancialStatusService()

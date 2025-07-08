@@ -1,55 +1,72 @@
 # Docker Deployment Guide
 
-This guide explains how to deploy the Debt Control Frontend using Docker.
-
-## Prerequisites
-
-- Docker installed and running
-- Docker Compose (optional, for advanced setups)
+This guide covers deploying the Debt Control Frontend using Docker.
 
 ## Quick Start
 
 ### 1. Environment Setup
 
-Create a `.env` file or set environment variables:
+Create a `.env` file from the example:
 
 \`\`\`bash
-export API_BASE_URL=http://your-api-host:port
+cp .env.example .env
+\`\`\`
+
+Edit the `.env` file with your API configuration:
+
+\`\`\`env
+NEXT_PUBLIC_API_BASE_URL=http://localhost:666
+API_BASE_URL=http://localhost:666
 \`\`\`
 
 ### 2. Deploy with Script
 
+The easiest way to deploy:
+
 \`\`\`bash
+# Make the script executable
 chmod +x deploy.sh
+
+# Deploy with default settings
 ./deploy.sh
+
+# Deploy with custom API URL
+API_BASE_URL=http://your-api-server:666 ./deploy.sh
 \`\`\`
 
 ### 3. Deploy with Docker Compose
 
-\`\`\`bash
-# Basic deployment
-API_BASE_URL=http://your-api-host:port docker-compose up --build -d
-
-# With nginx reverse proxy
-API_BASE_URL=http://your-api-host:port docker-compose --profile with-nginx up --build -d
-\`\`\`
-
-## Manual Deployment
-
-### Build Image
+For a more robust setup:
 
 \`\`\`bash
-docker build -t debt-control-frontend .
+# Start the application
+docker-compose up -d
+
+# With custom API URL
+API_BASE_URL=http://your-api-server:666 docker-compose up -d
+
+# Include Nginx reverse proxy
+docker-compose --profile with-nginx up -d
 \`\`\`
 
-### Run Container
+## Manual Docker Commands
+
+### Build the Image
+
+\`\`\`bash
+docker build \
+  --build-arg NEXT_PUBLIC_API_BASE_URL=http://localhost:666 \
+  -t debt-control-frontend .
+\`\`\`
+
+### Run the Container
 
 \`\`\`bash
 docker run -d \
   --name debt-control-frontend \
-  -p 3000:3000 \
-  -e NEXT_PUBLIC_API_BASE_URL=http://your-api-host:port \
   --restart unless-stopped \
+  -p 3000:3000 \
+  -e NEXT_PUBLIC_API_BASE_URL=http://localhost:666 \
   debt-control-frontend
 \`\`\`
 
@@ -59,11 +76,16 @@ docker run -d \
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `NEXT_PUBLIC_API_BASE_URL` | Backend API URL | `http://192.168.50.180:666` |
+| `NEXT_PUBLIC_API_BASE_URL` | API server URL | `http://localhost:666` |
 | `PORT` | Application port | `3000` |
-| `NODE_ENV` | Environment | `production` |
+| `NODE_ENV` | Environment mode | `production` |
 
-### Health Check
+### Docker Compose Profiles
+
+- **Default**: Just the frontend application
+- **with-nginx**: Includes Nginx reverse proxy
+
+## Health Checks
 
 The application includes a health check endpoint:
 
@@ -71,23 +93,36 @@ The application includes a health check endpoint:
 curl http://localhost:3000/api/health
 \`\`\`
 
+Response:
+\`\`\`json
+{
+  "status": "ok",
+  "timestamp": "2024-01-15T10:30:00.000Z",
+  "uptime": 123.45,
+  "environment": "production",
+  "apiBaseUrl": "http://localhost:666"
+}
+\`\`\`
+
 ## Monitoring
 
 ### View Logs
 
 \`\`\`bash
-docker logs debt-control-frontend
+# View real-time logs
+docker logs -f debt-control-frontend
+
+# View last 50 lines
+docker logs debt-control-frontend --tail 50
 \`\`\`
 
 ### Container Status
 
 \`\`\`bash
-docker ps --filter name=debt-control-frontend
-\`\`\`
+# Check container status
+docker ps | grep debt-control-frontend
 
-### Resource Usage
-
-\`\`\`bash
+# View resource usage
 docker stats debt-control-frontend
 \`\`\`
 
@@ -105,84 +140,67 @@ docker stats debt-control-frontend
    - Verify API server is accessible from container
 
 3. **Port conflicts**
-   - Change the port mapping: `-p 8080:3000`
+   \`\`\`bash
+   # Use different port
+   docker run -p 3001:3000 debt-control-frontend
+   \`\`\`
+
+### Reset Everything
+
+\`\`\`bash
+# Stop and remove container
+docker stop debt-control-frontend
+docker rm debt-control-frontend
+
+# Remove image
+docker rmi debt-control-frontend
+
+# Clean up unused resources
+docker system prune
+\`\`\`
+
+## Production Deployment
+
+### With SSL/HTTPS
+
+1. Update `docker-compose.yml` with SSL certificates
+2. Configure Nginx with SSL settings
+3. Update API URLs to use HTTPS
+
+### Scaling
+
+\`\`\`bash
+# Scale with Docker Compose
+docker-compose up -d --scale debt-control-frontend=3
+\`\`\`
+
+### Backup
+
+\`\`\`bash
+# Export container
+docker export debt-control-frontend > debt-control-backup.tar
+
+# Save image
+docker save debt-control-frontend > debt-control-image.tar
+\`\`\`
+
+## Development
+
+### Development Mode
+
+\`\`\`bash
+# Run in development mode
+docker run -d \
+  -p 3000:3000 \
+  -e NODE_ENV=development \
+  -v $(pwd):/app \
+  debt-control-frontend npm run dev
+\`\`\`
 
 ### Debug Mode
 
-Run container in interactive mode:
-
 \`\`\`bash
+# Run with debug output
 docker run -it --rm \
   -p 3000:3000 \
-  -e NEXT_PUBLIC_API_BASE_URL=http://your-api-host:port \
   debt-control-frontend sh
-\`\`\`
-
-## Production Considerations
-
-### SSL/HTTPS
-
-For production, use a reverse proxy like nginx:
-
-\`\`\`yaml
-# docker-compose.yml
-services:
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-\`\`\`
-
-### Performance
-
-- Use multi-stage builds (already implemented)
-- Enable gzip compression in reverse proxy
-- Set up CDN for static assets
-
-### Security
-
-- Run as non-root user (already implemented)
-- Use secrets for sensitive environment variables
-- Enable security headers in reverse proxy
-
-## Scaling
-
-### Docker Swarm
-
-\`\`\`bash
-docker service create \
-  --name debt-control-frontend \
-  --replicas 3 \
-  --publish 3000:3000 \
-  -e NEXT_PUBLIC_API_BASE_URL=http://your-api-host:port \
-  debt-control-frontend
-\`\`\`
-
-### Kubernetes
-
-\`\`\`yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: debt-control-frontend
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: debt-control-frontend
-  template:
-    metadata:
-      labels:
-        app: debt-control-frontend
-    spec:
-      containers:
-      - name: debt-control-frontend
-        image: debt-control-frontend:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: NEXT_PUBLIC_API_BASE_URL
-          value: "http://your-api-host:port"

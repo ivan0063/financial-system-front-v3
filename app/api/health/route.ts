@@ -16,8 +16,8 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "error",
-        message: "Health check failed",
         timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 },
     )
