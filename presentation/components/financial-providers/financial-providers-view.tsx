@@ -33,15 +33,15 @@ export function FinancialProvidersView() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       <FinancialProviderList onAdd={handleAdd} onEdit={handleEdit} refreshTrigger={refreshTrigger} />
 
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="mx-4 max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingProvider ? "Edit Financial Provider" : "Create Financial Provider"}</DialogTitle>
           </DialogHeader>
-          <FinancialProviderForm onSuccess={handleSuccess} onCancel={handleCancel} />
+          <FinancialProviderForm provider={editingProvider} onSuccess={handleSuccess} onCancel={handleCancel} />
         </DialogContent>
       </Dialog>
     </div>

@@ -58,7 +58,8 @@ export function FinancialProviderList({ onAdd, onEdit, refreshTrigger }: Financi
 
     try {
       setDeleting(true)
-      await financialProviderRepository.delete(deleteProvider.id)
+      // Use the code instead of id for deletion
+      await financialProviderRepository.delete(deleteProvider.code)
       await loadProviders() // Refresh the list
       setDeleteProvider(null)
     } catch (error) {
@@ -83,12 +84,12 @@ export function FinancialProviderList({ onAdd, onEdit, refreshTrigger }: Financi
     return (
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="w-full sm:w-auto">
               <Skeleton className="h-6 w-48 mb-2" />
               <Skeleton className="h-4 w-64" />
             </div>
-            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-full sm:w-32" />
           </div>
         </CardHeader>
         <CardContent>
@@ -113,7 +114,7 @@ export function FinancialProviderList({ onAdd, onEdit, refreshTrigger }: Financi
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
@@ -121,12 +122,18 @@ export function FinancialProviderList({ onAdd, onEdit, refreshTrigger }: Financi
               </CardTitle>
               <CardDescription>Manage financial institutions and service providers</CardDescription>
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={loadProviders} disabled={loading}>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadProviders}
+                disabled={loading}
+                className="w-full sm:w-auto bg-transparent"
+              >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
-              <Button onClick={onAdd}>
+              <Button onClick={onAdd} className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Provider
               </Button>
@@ -152,21 +159,21 @@ export function FinancialProviderList({ onAdd, onEdit, refreshTrigger }: Financi
               </Button>
             </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead>Updated</TableHead>
+                    <TableHead className="min-w-[100px]">Code</TableHead>
+                    <TableHead className="min-w-[150px]">Name</TableHead>
+                    <TableHead className="min-w-[80px]">Status</TableHead>
+                    <TableHead className="min-w-[120px] hidden sm:table-cell">Created</TableHead>
+                    <TableHead className="min-w-[120px] hidden sm:table-cell">Updated</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {providers.map((provider) => (
-                    <TableRow key={provider.id}>
+                    <TableRow key={provider.code}>
                       <TableCell className="font-mono text-sm">{provider.code}</TableCell>
                       <TableCell className="font-medium">{provider.name}</TableCell>
                       <TableCell>
@@ -174,8 +181,12 @@ export function FinancialProviderList({ onAdd, onEdit, refreshTrigger }: Financi
                           {provider.active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{formatDate(provider.createdAt)}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{formatDate(provider.updatedAt)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
+                        {formatDate(provider.createdAt)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
+                        {formatDate(provider.updatedAt)}
+                      </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -206,19 +217,21 @@ export function FinancialProviderList({ onAdd, onEdit, refreshTrigger }: Financi
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteProvider} onOpenChange={() => setDeleteProvider(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="mx-4 max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Financial Provider</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete "{deleteProvider?.name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={deleting} className="w-full sm:w-auto">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto"
             >
               {deleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>

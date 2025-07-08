@@ -9,16 +9,18 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { debtAccountRepository } from "@/infrastructure/repositories/api-debt-account-repository"
 import { financialProviderRepository } from "@/infrastructure/repositories/api-financial-provider-repository"
+import type { DebtAccount } from "@/domain/entities/debt-account"
 import type { FinancialProvider } from "@/domain/entities/financial-provider"
 import { Save, X, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface DebtAccountFormProps {
+  account?: DebtAccount | null
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
+export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFormProps) {
   const [formData, setFormData] = useState({
     code: "",
     name: "",
@@ -35,6 +37,29 @@ export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
   useEffect(() => {
     loadFinancialProviders()
   }, [])
+
+  // Populate form when editing
+  useEffect(() => {
+    if (account) {
+      setFormData({
+        code: account.code,
+        name: account.name,
+        payDay: account.payDay,
+        credit: account.credit,
+        accountStatementType: account.accountStatementType,
+        financialProviderId: account.financialProvider?.code || "",
+      })
+    } else {
+      setFormData({
+        code: "",
+        name: "",
+        payDay: 1,
+        credit: 0,
+        accountStatementType: "MANUAL",
+        financialProviderId: "",
+      })
+    }
+  }, [account])
 
   const loadFinancialProviders = async () => {
     try {
@@ -65,28 +90,35 @@ export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
 
     setLoading(true)
     try {
-      await debtAccountRepository.create({
+      const accountData = {
         code: formData.code,
         name: formData.name,
         payDay: formData.payDay,
         credit: formData.credit,
         accountStatementType: formData.accountStatementType,
-        financialProviderId: formData.financialProviderId,
+        financialProvider: `/jpa/financialProvider/${formData.financialProviderId}`, // URI format for Spring Data REST
         active: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      })
+      }
 
-      toast({
-        title: "Success",
-        description: "Debt account created successfully",
-      })
+      if (account) {
+        await debtAccountRepository.update(accountData)
+        toast({
+          title: "Success",
+          description: "Debt account updated successfully",
+        })
+      } else {
+        await debtAccountRepository.create(accountData)
+        toast({
+          title: "Success",
+          description: "Debt account created successfully",
+        })
+      }
       onSuccess()
     } catch (error) {
-      console.error("Error creating debt account:", error)
+      console.error("Error saving debt account:", error)
       toast({
         title: "Error",
-        description: "Failed to create debt account",
+        description: "Failed to save debt account",
         variant: "destructive",
       })
     } finally {
@@ -105,7 +137,9 @@ export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
             placeholder="e.g., VISA-001"
             required
+            disabled={loading || !!account} // Disable code editing when updating
           />
+          {account && <p className="text-xs text-muted-foreground">Code cannot be changed when editing</p>}
         </div>
 
         <div className="space-y-2">
@@ -116,6 +150,7 @@ export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Main Credit Card"
             required
+            disabled={loading}
           />
         </div>
 
@@ -128,6 +163,7 @@ export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
             max="31"
             value={formData.payDay}
             onChange={(e) => setFormData({ ...formData, payDay: Number.parseInt(e.target.value) || 1 })}
+            disabled={loading}
           />
         </div>
 
@@ -141,6 +177,7 @@ export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
             value={formData.credit}
             onChange={(e) => setFormData({ ...formData, credit: Number.parseFloat(e.target.value) || 0 })}
             placeholder="0.00"
+            disabled={loading}
           />
         </div>
 
@@ -149,6 +186,7 @@ export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
           <Select
             value={formData.accountStatementType}
             onValueChange={(value: any) => setFormData({ ...formData, accountStatementType: value })}
+            disabled={loading}
           >
             <SelectTrigger>
               <SelectValue />
@@ -167,7 +205,7 @@ export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
           <Select
             value={formData.financialProviderId}
             onValueChange={(value) => setFormData({ ...formData, financialProviderId: value })}
-            disabled={loadingProviders}
+            disabled={loading || loadingProviders}
           >
             <SelectTrigger>
               <SelectValue placeholder={loadingProviders ? "Loading..." : "Select a provider"} />
@@ -188,12 +226,12 @@ export function DebtAccountForm({ onSuccess, onCancel }: DebtAccountFormProps) {
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Creating...
+              {account ? "Updating..." : "Creating..."}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              Create Account
+              {account ? "Update Account" : "Create Account"}
             </>
           )}
         </Button>

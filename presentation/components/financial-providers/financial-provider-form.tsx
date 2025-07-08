@@ -8,18 +8,20 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, Save, X } from "lucide-react"
 import { financialProviderRepository } from "@/infrastructure/repositories/api-financial-provider-repository"
 import { financialProviderCatalogRepository } from "@/infrastructure/repositories/api-financial-provider-catalog-repository"
+import type { FinancialProvider } from "@/domain/entities/financial-provider"
 import type { FinancialProviderCatalog } from "@/domain/entities/financial-provider-catalog"
 import { useToast } from "@/hooks/use-toast"
 
 interface FinancialProviderFormProps {
+  provider?: FinancialProvider | null
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProviderFormProps) {
+export function FinancialProviderForm({ provider, onSuccess, onCancel }: FinancialProviderFormProps) {
   const [formData, setFormData] = useState({
     code: "",
     name: "",
@@ -31,7 +33,7 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
   const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  // Load financial provider catalogs on component mount
+  // Load financial provider catalogs and populate form if editing
   useEffect(() => {
     const loadCatalogs = async () => {
       try {
@@ -55,6 +57,23 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
     loadCatalogs()
   }, [toast])
 
+  // Populate form when editing
+  useEffect(() => {
+    if (provider) {
+      setFormData({
+        code: provider.code,
+        name: provider.name,
+        catalogId: provider.financialProviderCatalog?.id?.toString() || "",
+      })
+    } else {
+      setFormData({
+        code: "",
+        name: "",
+        catalogId: "",
+      })
+    }
+  }, [provider])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -67,24 +86,34 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
     setError(null)
 
     try {
-      // Create the provider with URI-based relationship for Spring Data REST
-      await financialProviderRepository.create({
+      const providerData = {
         code: formData.code,
         name: formData.name,
         active: true,
         financialProviderCatalog: `/jpa/financialProviderCatalog/${formData.catalogId}`, // URI format
-      })
+      }
 
-      toast({
-        title: "Success",
-        description: "Financial provider created successfully",
-      })
+      if (provider) {
+        // Update existing provider
+        await financialProviderRepository.update(providerData)
+        toast({
+          title: "Success",
+          description: "Financial provider updated successfully",
+        })
+      } else {
+        // Create new provider
+        await financialProviderRepository.create(providerData)
+        toast({
+          title: "Success",
+          description: "Financial provider created successfully",
+        })
+      }
 
       onSuccess()
     } catch (error) {
-      console.error("Error creating financial provider:", error)
+      console.error("Error saving financial provider:", error)
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to create financial provider. Please try again."
+        error instanceof Error ? error.message : "Failed to save financial provider. Please try again."
       setError(errorMessage)
       toast({
         title: "Error",
@@ -103,14 +132,16 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Create Financial Provider</CardTitle>
+    <Card className="w-full border-0 shadow-none">
+      <CardHeader className="px-0">
+        <CardTitle>{provider ? "Edit Financial Provider" : "Create Financial Provider"}</CardTitle>
         <CardDescription>
-          Add a new financial provider to the system. Select the appropriate catalog and provide the provider details.
+          {provider
+            ? "Update the financial provider information."
+            : "Add a new financial provider to the system. Select the appropriate catalog and provide the provider details."}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0">
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
@@ -166,9 +197,11 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
               onChange={(e) => handleInputChange("code", e.target.value)}
               placeholder="e.g., BANK001, CREDIT001"
               required
-              disabled={loading}
+              disabled={loading || !!provider} // Disable code editing when updating
             />
-            <p className="text-xs text-muted-foreground">Unique identifier for the financial provider</p>
+            <p className="text-xs text-muted-foreground">
+              {provider ? "Code cannot be changed when editing" : "Unique identifier for the financial provider"}
+            </p>
           </div>
 
           {/* Provider Name */}
@@ -186,15 +219,18 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
           </div>
 
           {/* Form Actions */}
-          <div className="flex space-x-3 pt-4">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
             <Button type="submit" disabled={loading || loadingCatalogs || catalogs.length === 0} className="flex-1">
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating...
+                  {provider ? "Updating..." : "Creating..."}
                 </>
               ) : (
-                "Create Provider"
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {provider ? "Update Provider" : "Create Provider"}
+                </>
               )}
             </Button>
             <Button
@@ -204,6 +240,7 @@ export function FinancialProviderForm({ onSuccess, onCancel }: FinancialProvider
               disabled={loading}
               className="flex-1 bg-transparent"
             >
+              <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
           </div>
