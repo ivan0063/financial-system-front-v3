@@ -1,21 +1,7 @@
-import { apiClient } from "../../infrastructure/api/api-client"
+import type { GetFinancialStatusUseCase } from "@/domain/use-cases/get-financial-status"
+import { apiClient } from "@/infrastructure/api/api-client"
 
-export interface AlmostCompletedDebt {
-  code: string
-  description: string
-  monthlyPayment: number
-  currentInstallment: number
-  maxFinancingTerm: number
-}
-
-export interface FixedExpense {
-  id: number
-  name: string
-  monthlyCost: number
-  paymentDay: number
-  active: boolean
-}
-
+// Updated interfaces based on the API specification
 export interface DebtAccount {
   code: string
   name: string
@@ -27,36 +13,68 @@ export interface DebtAccount {
   accountStatementType: "MERCADO_PAGO" | "RAPPI" | "UNIVERSAL" | "MANUAL"
 }
 
+export interface AlmostCompletedDebtsDto {
+  code: string
+  description: string
+  monthlyPayment: number
+  currentInstallment: number
+  maxFinancingTerm: number
+}
+
+export interface FixedExpenseCatalog {
+  id: number
+  name: string
+}
+
+export interface SystemUser {
+  email: string
+  name: string
+  salary: number
+  savings: number
+  createdAt: string
+  updatedAt: string
+  active: boolean
+}
+
+export interface FixedExpense {
+  id: number
+  name: string
+  monthlyCost: number
+  paymentDay: number
+  active: boolean
+  debtSysUser: SystemUser
+  fixedExpenseCatalog: FixedExpenseCatalog
+}
+
 export interface UserStatusDashboard {
   salary: number
   savings: number
   monthlyDebtPaymentAmount: number
   monthlyFixedExpensesAmount: number
   userDebtAccounts: DebtAccount[]
-  almostCompletedDebts: AlmostCompletedDebt[]
+  almostCompletedDebts: AlmostCompletedDebtsDto[]
   userFixedExpenses: FixedExpense[]
 }
 
-export class FinancialStatusService {
-  async getUserFinancialStatus(email: string): Promise<UserStatusDashboard> {
+export class FinancialStatusService implements GetFinancialStatusUseCase {
+  async execute(email: string): Promise<UserStatusDashboard> {
     try {
+      console.log(`Fetching financial status for email: ${email}`)
       const response = await apiClient.get<UserStatusDashboard>(`/financial/status/${email}`)
+      console.log("Financial status response:", response)
       return response
     } catch (error) {
-      console.error("Error fetching user financial status:", error)
-      throw new Error("Failed to fetch financial status")
-    }
-  }
+      console.error("Error fetching financial status:", error)
 
-  async getDebtAccountStatus(debtAccountCode: string) {
-    try {
-      const response = await apiClient.get(`/debt/account/status/${debtAccountCode}`)
-      return response
-    } catch (error) {
-      console.error("Error fetching debt account status:", error)
-      throw new Error("Failed to fetch debt account status")
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes("CORS Error")) {
+          throw new Error(`API Connection Error: ${error.message}`)
+        }
+        throw new Error(`Failed to fetch financial status: ${error.message}`)
+      }
+
+      throw new Error("Failed to fetch financial status: Unknown error")
     }
   }
 }
-
-export const financialStatusService = new FinancialStatusService()

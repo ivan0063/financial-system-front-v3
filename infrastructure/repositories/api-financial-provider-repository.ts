@@ -1,5 +1,9 @@
 import type { FinancialProviderRepository } from "@/domain/repositories/financial-provider-repository"
-import type { FinancialProvider } from "@/domain/entities/financial-provider"
+import type {
+  FinancialProvider,
+  CreateFinancialProviderRequest,
+  UpdateFinancialProviderRequest,
+} from "@/domain/entities/financial-provider"
 import { apiClient } from "../api/api-client"
 
 export class ApiFinancialProviderRepository implements FinancialProviderRepository {
@@ -8,24 +12,25 @@ export class ApiFinancialProviderRepository implements FinancialProviderReposito
     return response._embedded?.financialProvider || []
   }
 
-  async findByCode(code: string): Promise<FinancialProvider | null> {
+  async findById(id: number): Promise<FinancialProvider | null> {
     try {
-      return await apiClient.get<FinancialProvider>(`/jpa/financialProvider/${code}`)
+      const response = await apiClient.get<FinancialProvider>(`/jpa/financialProvider/${id}`)
+      return response
     } catch (error) {
       return null
     }
   }
 
-  async create(provider: Omit<FinancialProvider, "createdAt" | "updatedAt">): Promise<FinancialProvider> {
-    return apiClient.post<FinancialProvider>("/jpa/financialProvider", provider)
+  async create(provider: CreateFinancialProviderRequest): Promise<FinancialProvider> {
+    return await apiClient.post<FinancialProvider>("/jpa/financialProvider", provider)
   }
 
-  async update(code: string, provider: Partial<FinancialProvider>): Promise<FinancialProvider> {
-    return apiClient.put<FinancialProvider>(`/jpa/financialProvider/${code}`, provider)
+  async update(provider: UpdateFinancialProviderRequest): Promise<FinancialProvider> {
+    return await apiClient.put<FinancialProvider>(`/jpa/financialProvider/${provider.id}`, provider)
   }
 
-  async delete(code: string): Promise<void> {
-    return apiClient.delete(`/jpa/financialProvider/${code}`)
+  async delete(id: number): Promise<void> {
+    await apiClient.delete(`/jpa/financialProvider/${id}`)
   }
 }
 

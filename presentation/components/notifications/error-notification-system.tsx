@@ -25,7 +25,11 @@ export function ErrorNotificationSystem() {
     const originalWarn = console.warn
 
     console.error = (...args) => {
-      setErrorCount((prev) => prev + 1)
+      // Filter out CORS-related errors from the notification count
+      const errorMessage = args.join(" ")
+      if (!errorMessage.includes("CORS Error") && !errorMessage.includes("Load failed")) {
+        setErrorCount((prev) => prev + 1)
+      }
       originalError.apply(console, args)
     }
 
@@ -36,12 +40,20 @@ export function ErrorNotificationSystem() {
 
     // Capture unhandled promise rejections
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      setErrorCount((prev) => prev + 1)
+      // Filter out CORS-related promise rejections
+      const reason = event.reason?.toString() || ""
+      if (!reason.includes("CORS Error") && !reason.includes("Load failed")) {
+        setErrorCount((prev) => prev + 1)
+      }
     }
 
     // Capture global errors
     const handleError = (event: ErrorEvent) => {
-      setErrorCount((prev) => prev + 1)
+      // Filter out CORS-related errors
+      const errorMessage = event.message || ""
+      if (!errorMessage.includes("CORS Error") && !errorMessage.includes("Load failed")) {
+        setErrorCount((prev) => prev + 1)
+      }
     }
 
     window.addEventListener("unhandledrejection", handleUnhandledRejection)
