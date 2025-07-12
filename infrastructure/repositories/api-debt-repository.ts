@@ -1,106 +1,139 @@
-import type { Debt } from "../../domain/entities/debt"
-import type { DebtRepository } from "../../domain/repositories/debt-repository"
-import type { HttpClient } from "@angular/common/http"
-import { Injectable } from "@angular/core"
-import { type Observable, map, catchError, throwError } from "rxjs"
+import type { Debt } from "@/domain/entities/debt"
+import type { DebtRepository } from "@/domain/repositories/debt-repository"
+import { apiClient } from "../api/api-client"
 
-interface ApiResponse {
-  debts: Debt[]
-}
+const DEFAULT_USER_EMAIL = "jimm0063@gmail.com"
 
-@Injectable({
-  providedIn: "root",
-})
 export class ApiDebtRepository implements DebtRepository {
-  private apiUrl = "https://api.example.com/debts" // Replace with your actual API endpoint
+  async findAll(): Promise<Debt[]> {
+    try {
+      const response = await apiClient.get("/jpa/debt")
+      console.log("Raw debt response:", response)
 
-  constructor(private http: HttpClient) {}
-
-  findAll(): Observable<Debt[]> {
-    return this.http.get<ApiResponse>(this.apiUrl).pipe(
-      map((response) => {
-        if (!response || !response.debts) {
-          throw new Error("Invalid API response: Debts array is missing.")
-        }
-        return response.debts.map((debt) => ({
-          id: debt.id,
-          amount: debt.amount,
-          description: debt.description,
-          dueDate: new Date(debt.dueDate),
-          status: debt.status,
-        }))
-      }),
-      catchError((error) => {
-        console.error("Error fetching debts:", error)
-        return throwError(() => new Error("Failed to fetch debts."))
-      }),
-    )
+      if (response._embedded?.debt) {
+        return response._embedded.debt.map((debt: any) => this.mapToDebt(debt))
+      }
+      return []
+    } catch (error) {
+      console.error("Error fetching debts:", error)
+      throw error
+    }
   }
 
-  findById(id: string): Observable<Debt | undefined> {
-    return this.http.get<ApiResponse>(`${this.apiUrl}/${id}`).pipe(
-      map((response) => {
-        if (!response || !response.debts || response.debts.length === 0) {
-          return undefined
-        }
-        const debt = response.debts[0] // Assuming the API returns a list even for a single debt
-        return {
-          id: debt.id,
-          amount: debt.amount,
-          description: debt.description,
-          dueDate: new Date(debt.dueDate),
-          status: debt.status,
-        }
-      }),
-      catchError((error) => {
-        console.error(`Error fetching debt with id ${id}:`, error)
-        return throwError(() => new Error(`Failed to fetch debt with id ${id}.`))
-      }),
-    )
+  async findById(id: number): Promise<Debt | null> {
+    try {
+      const response = await apiClient.get(`/jpa/debt/${id}`)
+      return this.mapToDebt(response)
+    } catch (error) {
+      console.error("Error fetching debt:", error)
+      return null
+    }
   }
 
-  create(debt: Debt): Observable<Debt> {
-    return this.http.post<Debt>(this.apiUrl, debt).pipe(
-      map((response) => {
-        return {
-          id: response.id,
-          amount: response.amount,
-          description: response.description,
-          dueDate: new Date(response.dueDate),
-          status: response.status,
-        }
-      }),
-      catchError((error) => {
-        console.error("Error creating debt:", error)
-        return throwError(() => new Error("Failed to create debt."))
-      }),
-    )
+  async create(debt: Omit<Debt, "id">): Promise<Debt> {
+    try {
+      const payload = {
+        description: debt.description,
+        originalAmount: debt.originalAmount,
+        monthlyPayment: debt.monthlyPayment,
+        currentInstallment: debt.currentInstallment,
+        maxFinancingTerm: debt.maxFinancingTerm,
+        operationDate: debt.operationDate,
+        active: debt.active,
+        debtAccount: debt.debtAccount?.code ? `/jpa/debtAccount/${debt.debtAccount.code}` : null,
+        debtSysUser: `/jpa/user/${DEFAULT_USER_EMAIL}`,
+      }
+
+      console.log("Creating debt with payload:", payload)
+      const response = await apiClient.post("/jpa/debt", payload)
+      console.log("Created debt response:", response)
+      return this.mapToDebt(response)
+    } catch (error) {
+      console.error("Error creating debt:", error)
+      throw error
+    }
   }
 
-  update(debt: Debt): Observable<Debt> {
-    return this.http.put<Debt>(`${this.apiUrl}/${debt.id}`, debt).pipe(
-      map((response) => {
-        return {
-          id: response.id,
-          amount: response.amount,
-          description: response.description,
-          dueDate: new Date(response.dueDate),
-          status: response.status,
-        }
-      }),
-      catchError((error) => {
-        console.error(`Error updating debt with id ${debt.id}:`, error)
-        return throwError(() => new Error(`Failed to update debt with id ${debt.id}.`))
-      }),
-    )
+  async update(debt: Debt): Promise<Debt> {
+    try {
+      const payload = {
+        description: debt.description,
+        originalAmount: debt.originalAmount,
+        monthlyPayment: debt.monthlyPayment,
+        currentInstallment: debt.currentInstallment,
+        maxFinancingTerm: debt.maxFinancingTerm,
+        operationDate: debt.operationDate,
+        active: debt.active,
+        debtAccount: debt.debtAccount?.code ? `/jpa/debtAccount/${debt.debtAccount.code}` : null,
+        debtSysUser: `/jpa/user/${DEFAULT_USER_EMAIL}`,
+      }
+
+      console.log("Updating debt with payload:", payload)
+      const response = await apiClient.put(`/jpa/debt/${debt.id}`, payload)
+      console.log("Updated debt response:", response)
+      return this.mapToDebt(response)
+    } catch (error) {
+      console.error("Error updating debt:", error)
+      throw error
+    }
   }
 
-  delete(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
-      catchError((error) => {
-        console.error(`Error deleting debt with id ${id}:`, error)
-        return throwError(() => new Error(`Failed to delete debt with id ${id}.`))
-      }),
-    )
+  async delete(id: number): Promise<void> {
+    try {
+      await apiClient.delete(`/jpa/debt/${id}`)
+    } catch (error) {
+      console.error("Error deleting debt:", error)
+      throw error
+    }
+  }
+
+  async payOffDebts(debtAccountCode: string): Promise<string> {
+    try {
+      console.log("Paying off debts for account:", debtAccountCode)
+      const response = await apiClient.patch(`/debt/management/payOff/${debtAccountCode}`)
+      console.log("Pay off response:", response)
+      return response.message || "Debts paid off successfully"
+    } catch (error) {
+      console.error("Error paying off debts:", error)
+      throw error
+    }
+  }
+
+  private mapToDebt(data: any): Debt {
+    // Extract debt account information from the response
+    let debtAccount = null
+
+    if (data.debtAccount) {
+      // If debtAccount is a string (URI), extract the code
+      if (typeof data.debtAccount === "string") {
+        const codeMatch = data.debtAccount.match(/\/debtAccount\/(.+)$/)
+        debtAccount = {
+          code: codeMatch ? codeMatch[1] : data.debtAccount,
+          uri: data.debtAccount,
+          name: undefined, // Will be resolved by the component
+        }
+      } else if (typeof data.debtAccount === "object") {
+        // If debtAccount is an object, use it directly
+        debtAccount = {
+          code: data.debtAccount.code,
+          name: data.debtAccount.name,
+          uri: data.debtAccount.uri || `/jpa/debtAccount/${data.debtAccount.code}`,
+        }
+      }
+    }
+
+    return {
+      id: data.id,
+      description: data.description,
+      originalAmount: data.originalAmount,
+      monthlyPayment: data.monthlyPayment,
+      currentInstallment: data.currentInstallment,
+      maxFinancingTerm: data.maxFinancingTerm,
+      operationDate: data.operationDate,
+      active: data.active,
+      debtAccount,
+    }
   }
 }
+
+export const debtRepository = new ApiDebtRepository()
