@@ -6,13 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
-import { statementExtractionService } from "@/application/services/statement-extraction-service"
+import { apiClient } from "@/infrastructure/api/api-client"
 import type { DebtAccount } from "@/domain/entities/debt-account"
 import type { Debt } from "@/domain/entities/debt"
-import { Upload, Save, Plus, AlertCircle } from "lucide-react"
+import { Upload, Save, Edit3, Trash2, Plus, AlertCircle, CheckCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 interface StatementUploadProps {
@@ -50,11 +50,23 @@ export function StatementUpload({ debtAccounts, onSuccess, onCancel }: Statement
 
     setLoading(true)
     try {
-      const debts: Debt[] = await statementExtractionService.extractDebtsFromStatement(
-        file,
-        selectedAccount,
-        statementType,
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch(
+        `${apiClient.getBaseUrl()}/account/statement/extract/${selectedAccount}?accountStatementType=${statementType}`,
+        {
+          method: "POST",
+          mode: "cors",
+          body: formData,
+        },
       )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const debts: Debt[] = await response.json()
 
       // Convert to ExtractedDebt format with temporary IDs for local editing
       const extractedDebtsWithTempIds: ExtractedDebt[] = debts.map((debt, index) => ({
@@ -98,18 +110,15 @@ export function StatementUpload({ debtAccounts, onSuccess, onCancel }: Statement
         active: debt.active,
       }))
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.50.180:666"}/debt/management/add/${selectedAccount}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          mode: "cors",
-          body: JSON.stringify(debtsToSave),
+      const response = await fetch(`${apiClient.getBaseUrl()}/debt/management/add/${selectedAccount}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
         },
-      )
+        mode: "cors",
+        body: JSON.stringify(debtsToSave),
+      })
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -259,12 +268,11 @@ export function StatementUpload({ debtAccounts, onSuccess, onCancel }: Statement
             <SelectValue placeholder="Select a debt account" />
           </SelectTrigger>
           <SelectContent>
-            {Array.isArray(debtAccounts) &&
-              debtAccounts.map((account) => (
-                <SelectItem key={account.code} value={account.code}>
-                  {account.name} ({account.code})
-                </SelectItem>
-              ))}
+            {debtAccounts.map((account) => (
+              <SelectItem key={account.code} value={account.code}>
+                {account.name} ({account.code})
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -349,4 +357,105 @@ function DebtEditCard({ debt, onEdit, onSave, onCancel, onDelete, formatCurrency
                 onChange={(e) => setEditData({ ...editData, operationDate: e.target.value })}
               />
             </div>
-            <div className="space-y\
+            <div className="space-y-2">
+              <Label htmlFor="originalAmount">Original Amount</Label>
+              <Input
+                id="originalAmount"
+                type="number"
+                step="0.01"
+                value={editData.originalAmount}
+                onChange={(e) => setEditData({ ...editData, originalAmount: Number.parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="monthlyPayment">Monthly Payment</Label>
+              <Input
+                id="monthlyPayment"
+                type="number"
+                step="0.01"
+                value={editData.monthlyPayment}
+                onChange={(e) => setEditData({ ...editData, monthlyPayment: Number.parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="currentInstallment">Current Installment</Label>
+              <Input
+                id="currentInstallment"
+                type="number"
+                value={editData.currentInstallment}
+                onChange={(e) => setEditData({ ...editData, currentInstallment: Number.parseInt(e.target.value) || 1 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxFinancingTerm">Max Financing Term</Label>
+              <Input
+                id="maxFinancingTerm"
+                type="number"
+                value={editData.maxFinancingTerm}
+                onChange={(e) => setEditData({ ...editData, maxFinancingTerm: Number.parseInt(e.target.value) || 1 })}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={onCancel} size="sm">
+              Cancel
+            </Button>
+            <Button onClick={handleSave} size="sm">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Save Changes
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base">{debt.description}</CardTitle>
+          <div className="flex items-center space-x-2">
+            <Badge variant={debt.active ? "default" : "secondary"}>{debt.active ? "Active" : "Inactive"}</Badge>
+            <Button variant="ghost" size="sm" onClick={onEdit}>
+              <Edit3 className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={onDelete}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <CardDescription>{debt.operationDate}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <span className="text-muted-foreground">Amount:</span>
+            <div className="font-medium">{formatCurrency(debt.originalAmount)}</div>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Monthly Payment:</span>
+            <div className="font-medium">{formatCurrency(debt.monthlyPayment)}</div>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Installments:</span>
+            <div className="font-medium">
+              {debt.currentInstallment}/{debt.maxFinancingTerm}
+            </div>
+          </div>
+          <div>
+            <span className="text-muted-foreground">Progress:</span>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+              <div
+                className="bg-blue-500 h-2 rounded-full"
+                style={{
+                  width: `${Math.min((debt.currentInstallment / debt.maxFinancingTerm) * 100, 100)}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}

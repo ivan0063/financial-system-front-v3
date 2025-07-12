@@ -26,7 +26,7 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
     name: "",
     payDay: 1,
     credit: "",
-    accountStatementType: "UNIVERSAL" as "UNIVERSAL" | "BANCOLOMBIA" | "DAVIVIENDA",
+    accountStatementType: "UNIVERSAL" as const,
     financialProviderId: "",
     active: true,
   })
@@ -210,8 +210,9 @@ export function DebtAccountForm({ account, onSuccess, onCancel }: DebtAccountFor
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="UNIVERSAL">Universal</SelectItem>
-              <SelectItem value="BANCOLOMBIA">Bancolombia</SelectItem>
-              <SelectItem value="DAVIVIENDA">Davivienda</SelectItem>
+              <SelectItem value="MERCADO_PAGO">Mercado Pago</SelectItem>
+              <SelectItem value="RAPPI">Rappi</SelectItem>
+              <SelectItem value="MANUAL">Manual</SelectItem>
             </SelectContent>
           </Select>
         </div>

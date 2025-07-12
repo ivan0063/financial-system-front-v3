@@ -7,4 +7,9 @@ export interface DebtAccount {
   updatedAt: string
   active: boolean
   accountStatementType: "MERCADO_PAGO" | "RAPPI" | "UNIVERSAL" | "MANUAL"
+  financialProvider?: {
+    code: string
+    name: string
+    active: boolean
+  }
 }

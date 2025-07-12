@@ -14,11 +14,12 @@ import { useToast } from "@/hooks/use-toast"
 
 interface FixedExpenseCatalogFormProps {
   catalog?: FixedExpenseCatalog | null
-  onSuccess: () => void
-  onCancel: () => void
+  onClose: () => void
+  onSuccess?: () => void
 }
 
-export function FixedExpenseCatalogForm({ catalog, onSuccess, onCancel }: FixedExpenseCatalogFormProps) {
+export function FixedExpenseCatalogForm({ catalog, onClose, onSuccess }: FixedExpenseCatalogFormProps) {
+  const [code, setCode] = useState("")
   const [name, setName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -26,8 +27,10 @@ export function FixedExpenseCatalogForm({ catalog, onSuccess, onCancel }: FixedE
 
   useEffect(() => {
     if (catalog) {
+      setCode(catalog.code)
       setName(catalog.name)
     } else {
+      setCode("")
       setName("")
     }
   }, [catalog])
@@ -35,8 +38,8 @@ export function FixedExpenseCatalogForm({ catalog, onSuccess, onCancel }: FixedE
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!name.trim()) {
-      setError("Please enter a catalog name.")
+    if (!code.trim() || !name.trim()) {
+      setError("Please fill in all fields.")
       return
     }
 
@@ -44,20 +47,31 @@ export function FixedExpenseCatalogForm({ catalog, onSuccess, onCancel }: FixedE
     setError(null)
 
     try {
+      const catalogData = {
+        code: code.trim(),
+        name: name.trim(),
+        active: true,
+      }
+
       if (catalog) {
-        await fixedExpenseCatalogRepository.update(catalog.id, { name: name.trim() })
+        await fixedExpenseCatalogRepository.update(catalog.code, catalogData)
         toast({
           title: "Success",
           description: "Fixed expense catalog updated successfully",
         })
       } else {
-        await fixedExpenseCatalogRepository.create({ name: name.trim() })
+        await fixedExpenseCatalogRepository.create(catalogData)
         toast({
           title: "Success",
           description: "Fixed expense catalog created successfully",
         })
       }
-      onSuccess()
+
+      // Call onSuccess callback to refresh the parent component
+      if (onSuccess) {
+        onSuccess()
+      }
+      onClose()
     } catch (error) {
       console.error("Error saving fixed expense catalog:", error)
       const errorMessage = error instanceof Error ? error.message : "Failed to save fixed expense catalog"
@@ -76,7 +90,9 @@ export function FixedExpenseCatalogForm({ catalog, onSuccess, onCancel }: FixedE
     <Card>
       <CardHeader>
         <CardTitle>{catalog ? "Edit" : "Create"} Fixed Expense Catalog</CardTitle>
-        <CardDescription>{catalog ? "Update the catalog information" : "Add a new expense category"}</CardDescription>
+        <CardDescription>
+          {catalog ? "Update the catalog information" : "Add a new fixed expense catalog"}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -88,12 +104,25 @@ export function FixedExpenseCatalogForm({ catalog, onSuccess, onCancel }: FixedE
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
+            <Label htmlFor="code">Code *</Label>
+            <Input
+              id="code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Enter catalog code"
+              required
+              disabled={isLoading || !!catalog} // Disable code editing when updating
+            />
+            {catalog && <p className="text-xs text-muted-foreground">Code cannot be changed when editing</p>}
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter catalog name (e.g., Utilities, Entertainment)"
+              placeholder="Enter catalog name"
               required
               disabled={isLoading}
             />
@@ -112,7 +141,7 @@ export function FixedExpenseCatalogForm({ catalog, onSuccess, onCancel }: FixedE
                 "Create"
               )}
             </Button>
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
               Cancel
             </Button>
           </div>

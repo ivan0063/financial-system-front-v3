@@ -4,289 +4,202 @@ import type React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { StatementExtractionService } from "@/application/services/statement-extraction-service"
-import type { DebtAccount } from "@/domain/entities/debt-account"
-import type { Debt } from "@/domain/entities/debt"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
-import { Upload, FileText, Loader2, CheckCircle, X } from "lucide-react"
+import { Upload, Loader2, AlertCircle } from "lucide-react"
+import type { DebtAccount } from "@/domain/entities/debt-account"
 
 interface StatementUploadModalProps {
   isOpen: boolean
   onClose: () => void
-  debtAccounts: DebtAccount[]
+  debtAccounts?: DebtAccount[]
   onSuccess: () => void
 }
 
-export function StatementUploadModal({ isOpen, onClose, debtAccounts, onSuccess }: StatementUploadModalProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+export function StatementUploadModal({ isOpen, onClose, debtAccounts = [], onSuccess }: StatementUploadModalProps) {
   const [selectedAccountCode, setSelectedAccountCode] = useState("")
-  const [extractedDebts, setExtractedDebts] = useState<Debt[]>([])
-  const [loading, setLoading] = useState(false)
-  const [step, setStep] = useState<"upload" | "review" | "success">("upload")
+  const [file, setFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  const statementExtractionService = new StatementExtractionService()
+  const selectedAccount = debtAccounts.find((account) => account.code === selectedAccountCode)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setSelectedFile(file)
+    const selectedFile = e.target.files?.[0]
+    if (selectedFile) {
+      // Check file type - only allow PDF and CSV
+      const allowedTypes = ["application/pdf", "text/csv", "application/vnd.ms-excel"]
+      const fileExtension = selectedFile.name.toLowerCase().split(".").pop()
+
+      if (!allowedTypes.includes(selectedFile.type) && !["pdf", "csv"].includes(fileExtension || "")) {
+        setError("Please select a PDF or CSV file only.")
+        setFile(null)
+        e.target.value = ""
+        return
+      }
+
+      setFile(selectedFile)
+      setError(null)
     }
   }
 
-  const handleUpload = async () => {
-    if (!selectedFile || !selectedAccountCode) {
-      toast({
-        title: "Error",
-        description: "Please select a file and debt account",
-        variant: "destructive",
-      })
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!selectedAccountCode) {
+      setError("Please select a debt account.")
       return
     }
 
-    setLoading(true)
-    try {
-      const debts = await statementExtractionService.extractDebtsFromStatement(selectedFile, selectedAccountCode)
-      setExtractedDebts(debts)
-      setStep("review")
-      toast({
-        title: "Success",
-        description: `Extracted ${debts.length} debts from statement`,
-      })
-    } catch (error) {
-      console.error("Error extracting debts:", error)
-      toast({
-        title: "Error",
-        description: "Failed to extract debts from statement",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
+    if (!file) {
+      setError("Please select a file to upload.")
+      return
     }
-  }
 
-  const handleSaveDebts = async () => {
-    setLoading(true)
+    if (!selectedAccount) {
+      setError("Selected debt account not found.")
+      return
+    }
+
+    setUploading(true)
+    setError(null)
+
     try {
-      // Here you would typically save the debts to the database
-      // For now, we'll just simulate success
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      setStep("success")
+      const formData = new FormData()
+      formData.append("file", file)
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/account/statement/extract/${selectedAccountCode}?accountStatementType=${selectedAccount.accountStatementType}`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      )
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Upload failed: ${errorText}`)
+      }
+
+      const result = await response.json()
+
       toast({
         title: "Success",
-        description: "Debts saved successfully",
+        description: `Statement processed successfully. ${result.length || 0} debts extracted.`,
       })
+
+      onSuccess()
+      onClose()
+
+      // Reset form
+      setSelectedAccountCode("")
+      setFile(null)
     } catch (error) {
-      console.error("Error saving debts:", error)
+      console.error("Error uploading statement:", error)
+      const errorMessage = error instanceof Error ? error.message : "Failed to upload statement"
+      setError(errorMessage)
       toast({
         title: "Error",
-        description: "Failed to save debts",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
-      setLoading(false)
+      setUploading(false)
     }
   }
 
   const handleClose = () => {
-    setSelectedFile(null)
-    setSelectedAccountCode("")
-    setExtractedDebts([])
-    setStep("upload")
-    onClose()
+    if (!uploading) {
+      setSelectedAccountCode("")
+      setFile(null)
+      setError(null)
+      onClose()
+    }
   }
-
-  const handleComplete = () => {
-    onSuccess()
-    handleClose()
-  }
-
-  const selectedAccount = debtAccounts.find((account) => account.code === selectedAccountCode)
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="mx-4 max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Upload Account Statement
-          </DialogTitle>
-          <DialogDescription>Upload a statement file to automatically extract and import debts</DialogDescription>
+          <DialogTitle>Upload Account Statement</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {step === "upload" && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="account">Select Debt Account</Label>
-                <Select value={selectedAccountCode} onValueChange={setSelectedAccountCode}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a debt account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {debtAccounts
-                      .filter((account) => account.active)
-                      .map((account) => (
-                        <SelectItem key={account.code} value={account.code}>
-                          <div className="flex items-center gap-2">
-                            <span>{account.name}</span>
-                            <Badge variant="outline" className="text-xs">
-                              {account.accountStatementType}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-              {selectedAccount && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm">Selected Account Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Name:</span>
-                        <p className="font-medium">{selectedAccount.name}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Statement Type:</span>
-                        <p className="font-medium">{selectedAccount.accountStatementType}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Provider:</span>
-                        <p className="font-medium">{selectedAccount.financialProvider?.name || "N/A"}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Credit Limit:</span>
-                        <p className="font-medium">${selectedAccount.credit.toLocaleString()}</p>
-                      </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="debtAccount">Select Debt Account</Label>
+            <Select value={selectedAccountCode} onValueChange={setSelectedAccountCode} required>
+              <SelectTrigger>
+                <SelectValue placeholder="Choose debt account" />
+              </SelectTrigger>
+              <SelectContent>
+                {debtAccounts.map((account) => (
+                  <SelectItem key={account.code} value={account.code}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{account.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Code: {account.code} | Type: {account.accountStatementType}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="file">Statement File</Label>
-                <Input
-                  id="file"
-                  type="file"
-                  accept=".pdf,.txt,.csv"
-                  onChange={handleFileChange}
-                  className="cursor-pointer"
-                />
-                <p className="text-xs text-muted-foreground">Supported formats: PDF, TXT, CSV (max 10MB)</p>
-              </div>
-
-              {selectedFile && (
-                <Card>
-                  <CardContent className="pt-4">
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-8 w-8 text-blue-500" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{selectedFile.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                        </p>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => setSelectedFile(null)}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              <div className="flex gap-2 pt-4">
-                <Button
-                  onClick={handleUpload}
-                  disabled={!selectedFile || !selectedAccountCode || loading}
-                  className="flex-1"
-                >
-                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Extract Debts
-                </Button>
-                <Button variant="outline" onClick={handleClose} className="flex-1 bg-transparent">
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === "review" && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold">Review Extracted Debts</h3>
-                  <p className="text-sm text-muted-foreground">Found {extractedDebts.length} debts in the statement</p>
-                </div>
-                <Badge variant="secondary">{extractedDebts.length} debts</Badge>
-              </div>
-
-              <div className="max-h-96 overflow-y-auto space-y-3">
-                {extractedDebts.map((debt, index) => (
-                  <Card key={index}>
-                    <CardContent className="pt-4">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Description:</span>
-                          <p className="font-medium truncate">{debt.description}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Amount:</span>
-                          <p className="font-medium">${debt.monthlyPayment.toLocaleString()}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Installments:</span>
-                          <p className="font-medium">
-                            {debt.currentInstallment}/{debt.maxFinancingTerm}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Operation Date:</span>
-                          <p className="font-medium">{debt.operationDate}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  </SelectItem>
                 ))}
-              </div>
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div className="flex gap-2 pt-4">
-                <Button onClick={handleSaveDebts} disabled={loading} className="flex-1">
-                  {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Save All Debts
-                </Button>
-                <Button variant="outline" onClick={() => setStep("upload")} className="flex-1">
-                  Back to Upload
-                </Button>
-              </div>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="statementFile">Statement File (PDF or CSV only)</Label>
+            <Input
+              id="statementFile"
+              type="file"
+              accept=".pdf,.csv,application/pdf,text/csv"
+              onChange={handleFileChange}
+              required
+              disabled={uploading}
+            />
+            {file && (
+              <p className="text-sm text-muted-foreground">
+                Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+              </p>
+            )}
+          </div>
 
-          {step === "success" && (
-            <div className="text-center space-y-4 py-8">
-              <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
-              <div>
-                <h3 className="text-lg font-semibold">Upload Successful!</h3>
-                <p className="text-muted-foreground">
-                  Successfully imported {extractedDebts.length} debts from your statement
-                </p>
-              </div>
-              <Button onClick={handleComplete} className="w-full">
-                Complete
-              </Button>
-            </div>
-          )}
-        </div>
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={uploading || !selectedAccountCode || !file} className="flex-1">
+              {uploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Statement
+                </>
+              )}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={uploading}
+              className="flex-1 bg-transparent"
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   )

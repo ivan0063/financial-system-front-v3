@@ -85,13 +85,19 @@ export function FixedExpenseForm({ expense, onClose }: FixedExpenseFormProps) {
     setError(null)
 
     try {
+      const selectedCatalog = catalogs.find((c) => c.code === catalogCode)
+      if (!selectedCatalog) {
+        setError("Selected category not found.")
+        return
+      }
+
       const expenseData = {
         name: name.trim(),
         monthlyCost: monthlyAmount,
         paymentDay,
         active: true,
         debtSysUser: `/jpa/user/${DEFAULT_USER_EMAIL}`,
-        fixedExpenseCatalog: `/jpa/fixedExpenseCatalog/${catalogCode}`,
+        fixedExpenseCatalog: `/jpa/fixedExpenseCatalog/${selectedCatalog.id}`,
       }
 
       if (expense) {

@@ -94,14 +94,18 @@ export function DebtsView() {
               <Upload className="h-4 w-4 mr-2" />
               Upload Statement
             </Button>
-            <Button onClick={handleAdd} className="flex-1 sm:flex-none" disabled={debtAccounts.length === 0}>
+            <Button
+              onClick={handleAdd}
+              className="flex-1 sm:flex-none"
+              disabled={!debtAccounts || debtAccounts.length === 0}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Debt
             </Button>
           </div>
         </div>
 
-        {debtAccounts.length === 0 && (
+        {(!debtAccounts || debtAccounts.length === 0) && (
           <Card className="mb-6 sm:mb-8">
             <CardContent className="flex flex-col items-center justify-center h-32 space-y-3 text-center">
               <p className="text-muted-foreground">
@@ -133,6 +137,7 @@ export function DebtsView() {
         <StatementUploadModal
           isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}
+          debtAccounts={debtAccounts}
           onSuccess={handleUploadSuccess}
         />
       </div>
